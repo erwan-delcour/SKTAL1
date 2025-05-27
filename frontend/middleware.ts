@@ -1,15 +1,14 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import type {NextRequest} from 'next/server';
+import {NextResponse} from 'next/server';
 
 export async function middleware(request: NextRequest) {
-    const { pathname } = request.nextUrl;
+    const {pathname} = request.nextUrl;
 
     // Get authentication token from cookies
-    //const token = request.cookies.get('auth-token')?.value;
-    
-    // Check if user is authenticated
-    const isAuthenticated = true;
-    
+    const token = request.cookies.get('token')?.value;
+
+    const isAuthenticated = token;
+
     // Protect dashboard routes
     if (pathname.startsWith('/dashboard')) {
         if (!isAuthenticated) {
@@ -28,5 +27,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/login', '/dashboard/:path*'],
+    matcher: ['/login', '/dashboard/:path*'],
 }

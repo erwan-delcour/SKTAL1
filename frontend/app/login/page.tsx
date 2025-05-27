@@ -1,9 +1,15 @@
 "use client";
 
+import SignInForm from "@app/login/loginForm";
+
 export default function LoginPage() {
     return (
-        <div className="flex items-center justify-center h-screen">
-            <h1>Hello from Login /login</h1>
+        <div className="min-h-screen flex flex-col">
+            <div className="flex flex-1 items-center justify-center p-6 md:p-10">
+                <div className="w-full max-w-sm">
+                    <SignInForm/>
+                </div>
+            </div>
         </div>
     );
 }
