@@ -7,3 +7,7 @@ CREATE TABLE users (
     password TEXT NOT NULL,
     role TEXT DEFAULT 'user' NOT NULL
 );
+
+
+INSERT INTO users (email, login, password)
+VALUES ('user@example.com', 'username', '$2b$10$cMIWLjsU9aVp29H5AjeNau.hnClnZ6CBnTPSrSF850I/GQFWh1BIG');

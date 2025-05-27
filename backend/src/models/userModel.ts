@@ -1,5 +1,4 @@
 import pool from '../db/dbConfig';
-import { validate as isUuid } from 'uuid';
 import { CustomError } from '../utils/customError';
 
 export interface UserModel {
@@ -17,6 +16,12 @@ export async function getUserByLogin(login: string): Promise<UserModel> {
         throw new CustomError('User not found', 404);
     }
     const user = result.rows[0];
-    delete user.password;
     return user as UserModel;
 }
+
+export async function getAllUsers(): Promise<UserModel[]> {
+    const query = 'SELECT * FROM users';
+    const result = await pool.query(query);
+    return result.rows as UserModel[];
+}
+
