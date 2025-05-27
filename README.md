@@ -22,3 +22,15 @@ npm run dev
 
 
 # SKTAL1 - Frontend
+
+Pour initialiser le front, rendez vous dans le dossier `frontend` et exécutez la commande suivante :
+
+```bash
+npm install
+```
+
+Puis, pour démarrer le serveur backend, exécutez la commande suivante :
+
+```bash
+npm run dev
+```
