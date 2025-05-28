@@ -1,3 +1,5 @@
+import FooterLayout from "@/components/footer-layout";
+import HeaderLayout from "@/components/header-layout";
 import { ParkingLayout } from "@/components/parking-layout";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, Car, LineChart, LogIn, Users } from "lucide-react";
@@ -6,23 +8,11 @@ import Link from "next/link";
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col w-full items-center justify-center">
-      <header className="border-b w-full justify-between">
-        <div className="flex flex-row items-center justify-between mx-8 my-4">
-          <div className="flex flex-row items-center gap-2 font-semibold">
-            <Car className="h-6 w-6" />
-            <span>ParkEase</span>
-          </div>
-          <nav className="flex w-auto flex-row items-center gap-4">
-            <Link href="/login" className="text-sm font-medium hover:underline underline-offset-4">
-              Login
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <HeaderLayout />
       <main className="w-full">
         <section className="w-full py-12 bg-muted">
-          <div className="grid grid-flow-col grid-rows-2 gap-4">
-            <div className="">
+          <div className="px-16">
+            <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
               <div className="space-y-4">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                   Parking Reservation System
@@ -47,7 +37,7 @@ export default function Home() {
           </div>
         </section>
         <section className="w-full py-12 md:py-24 lg:py-32">
-          <div className="container px-4 md:px-6">
+          <div className="px-4 md:px-6">
             <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               <div className="flex flex-col items-center gap-2 text-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
@@ -89,19 +79,7 @@ export default function Home() {
           </div>
         </section>
       </main>
-      <footer className="border-t py-6 md:py-0">
-        <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
-          <p className="text-sm text-muted-foreground md:text-base">© 2025 ParkEase. All rights reserved.</p>
-          <div className="flex gap-4">
-            <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
-              Terms of Service
-            </Link>
-            <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
-              Privacy Policy
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <FooterLayout />
     </div>
   );
 }

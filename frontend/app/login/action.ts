@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
 export const signInAction = async (initialData: {},formData: FormData) => {
@@ -29,6 +30,7 @@ export const signInAction = async (initialData: {},formData: FormData) => {
             maxAge: 60 * 60 * 24 * 7, // 7 days
             sameSite: "strict",
         });
+        redirect("/dashboard");
         return {
             message: "Login successful",
             success: true,
