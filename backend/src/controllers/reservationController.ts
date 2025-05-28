@@ -9,11 +9,11 @@ export const getReservations = async (req: Request, res: Response) => {
     try {
         const reservations = await getReservationsFromDB();
         if (!reservations || reservations.length === 0) {
-            return res.status(404).json({ message: "No reservations found" });
+            res.status(404).json({ message: "No reservations found" });
+            return;
         }
         res.status(200).json(reservations);
-
-
+        return;
     } catch (error) {
         console.error("Error fetching reservations:", error);
         res.status(500).json({ message: "Internal server error" });
@@ -24,9 +24,10 @@ export const getReservationById = async (req: Request, res: Response) => {
     const reservationId = req.params.id;
     try {
         const reservations = await getReservationsFromDB();
-        const reservation = reservations.find(r => r._id === reservationId);
+        const reservation = reservations.find(r => r.id === reservationId);
         if (!reservation) {
-            return res.status(404).json({ message: "Reservation not found" });
+            res.status(404).json({ message: "Reservation not found" });
+            return;
         }
         res.status(200).json(reservation);
     } catch (error) {
@@ -39,7 +40,7 @@ export const getReservationsByUser = async (req: Request, res: Response) => {
     const userId = req.params.userId;
     try {
         const reservations = await getReservationsFromDB();
-        const userReservations = reservations.filter(r => r.user === userId);
+        const userReservations = reservations.filter(r => r.userId === userId);
         if (!userReservations || userReservations.length === 0) {
             return res.status(404).json({ message: "No reservations found for this user" });
         }
@@ -54,13 +55,13 @@ export const cancelReservation = async (req: Request, res: Response) => {
     const reservationId = req.params.id;
     try {
         const reservations = await getReservationsFromDB();
-        const reservationIndex = reservations.findIndex(r => r._id === reservationId);
+        const reservationIndex = reservations.findIndex(r => r.id === reservationId);
         if (reservationIndex === -1) {
             return res.status(404).json({ message: "Reservation not found" });
         }
 
         // Update the reservation status to 'cancelled'
-        await cancelReservationInDB(reservations[reservationIndex]._id);
+        await cancelReservationInDB(reservations[reservationIndex].id);
 
         res.status(200).json(reservations[reservationIndex]);
     } catch (error) {
@@ -114,7 +115,7 @@ export const checkedInReservation = async (req: Request, res: Response) => {
     try {
         const reservationId = req.params.id;
         const reservations = await getReservationsFromDB();
-        const reservationIndex = reservations.findIndex(r => r._id === reservationId);
+        const reservationIndex = reservations.findIndex(r => r.id === reservationId);
         
         if (reservationIndex === -1) {
             return res.status(404).json({ message: "Reservation not found" });
@@ -122,11 +123,11 @@ export const checkedInReservation = async (req: Request, res: Response) => {
 
         await updateReservationInDB({
             ...reservations[reservationIndex],
-            status: 'checked-in',
+            statusChecked: true,
             checkInTime: new Date()
         });
 
-        reservations[reservationIndex].status = 'checked-in';   
+        reservations[reservationIndex].statusChecked = true;
         reservations[reservationIndex].checkInTime = new Date();
         // Update the parking spot availability
         reservations[reservationIndex].spot.isAvailable = false;

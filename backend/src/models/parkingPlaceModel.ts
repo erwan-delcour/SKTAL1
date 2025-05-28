@@ -1,7 +1,7 @@
 export interface ParkingPlace {
-  id: string;
-  isAvailable: boolean;
-  hasCharger: boolean;
-  row: number;
-  spotNumber: number;
+    id: string;
+    isAvailable: boolean;
+    hasCharger: boolean;
+    row: string;
+    spotNumber: string;
 }
