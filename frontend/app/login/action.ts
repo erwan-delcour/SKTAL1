@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { decodeTokenUnsafe, getRoleFromToken } from "@/lib/jwt";
 
 interface SignInState {
   message: string
@@ -40,11 +41,32 @@ export const signInAction = async (
             sameSite: "strict",
         });
         
+        // Décoder le token pour obtenir le rôle et rediriger vers le bon dashboard
+        let redirectPath = "/dashboard/employee"; // défaut
+        
+        const userRole = getRoleFromToken(data.token);
+        
+        if (userRole) {
+            // Rediriger selon le rôle
+            switch (userRole) {
+                case 'manager':
+                    redirectPath = "/dashboard/manager";
+                    break;
+                case 'secretary':
+                    redirectPath = "/dashboard/secretary";
+                    break;
+                case 'user':
+                default:
+                    redirectPath = "/dashboard/employee";
+                    break;
+            }
+        }
+        
         // Retourner le succès d'abord, puis rediriger dans le hook
         return {
             message: "Connexion réussie !",
             success: true,
-            redirect: "/dashboard/employee"
+            redirect: redirectPath
         };
     } else {
         return {
