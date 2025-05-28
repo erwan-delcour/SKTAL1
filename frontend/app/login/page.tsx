@@ -1,8 +1,5 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { signInAction } from "./action";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Car } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,14 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useFormStatus } from "react-dom";
-
-const initialState = {
-    message: '',
-    success: false,
-}
+import { useSignInWithToast } from "./useSignInWithToast";
 
 export default function LoginPage() {
-    const [state, action] = useActionState(signInAction, initialState);
+    const { formAction, isPending, state } = useSignInWithToast();
 
     return (
         <div className="flex h-screen w-screen flex-col items-center justify-center">
@@ -36,7 +29,7 @@ export default function LoginPage() {
           <p className="text-sm text-muted-foreground">Enter your credentials to access your account</p>
         </div>
         <Card >
-          <form action={action} className="space-y-6">
+          <form action={formAction} className="space-y-6">
             <CardHeader>
               <CardTitle className="text-xl">Identify yourself</CardTitle>
               <CardDescription>Access the parking reservation system</CardDescription>
@@ -70,9 +63,6 @@ export default function LoginPage() {
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <SubmitButton/>
-              {state?.success === false && (
-              <div className="text-red-500 text-sm text-center">{state?.message}</div>
-            )}
             </CardFooter>
           </form>
         </Card>

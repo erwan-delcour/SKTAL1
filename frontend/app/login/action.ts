@@ -3,7 +3,16 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
-export const signInAction = async (initialData: {},formData: FormData) => {
+interface SignInState {
+  message: string
+  success: boolean
+  redirect?: string
+}
+
+export const signInAction = async (
+  prevState: SignInState,
+  formData: FormData
+): Promise<SignInState> => {
     const login = formData.get("login") as string;
     const password = formData.get("password") as string;
 
@@ -30,10 +39,12 @@ export const signInAction = async (initialData: {},formData: FormData) => {
             maxAge: 60 * 60 * 24 * 7, // 7 days
             sameSite: "strict",
         });
-        redirect("/dashboard");
+        
+        // Retourner le succès d'abord, puis rediriger dans le hook
         return {
-            message: "Login successful",
+            message: "Connexion réussie !",
             success: true,
+            redirect: "/dashboard/employee"
         };
     } else {
         return {
