@@ -10,3 +10,5 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
         res.status(error.statusCode || 500).json({ message: error.message || 'Internal Server Error' });
     }
 }
+
+
