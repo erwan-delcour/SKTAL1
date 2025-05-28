@@ -47,16 +47,15 @@ export const getReservationsByUser = async (req: Request, res: Response) => {
 export const cancelReservation = async (req: Request, res: Response) => {
     const reservationId = req.params.id;
     try {
-        const reservations = await getReservationsFromDB();
-        const reservationIndex = reservations.findIndex(r => r.id === reservationId);
-        if (reservationIndex === -1) {
+        const reservation = await getReservationByIdFromDB(reservationId);
+        if (!reservation) {
             res.status(404).json({ message: "Reservation not found" });
             return;
         }
 
-        await cancelReservationInDB(reservations[reservationIndex].id);
+        await cancelReservationInDB(reservation.id);
 
-        res.status(200).json(reservations[reservationIndex]);
+        res.status(200).json(reservation);
     } catch (error) {
         console.error("Error cancelling reservation:", error);
         res.status(500).json({ message: "Internal server error" });
@@ -65,45 +64,18 @@ export const cancelReservation = async (req: Request, res: Response) => {
 
 export const createReservation = async (req: Request, res: Response) => {
     const newReservation = req.body;
-    const userId = newReservation.user;
-    const user = await getUserById(userId);
-
-    if (!newReservation.user || !newReservation.spot || !newReservation.startDate || !newReservation.endDate) {
-         res.status(400).json({ message: "Missing required reservation fields" });
-         return;
-    }
-
-    
-    if (new Date(newReservation.startDate) >= new Date(newReservation.endDate)) {
-        res.status(400).json({ message: "Start date must be before end date" });
-        return;
-    }// date bonne 
-
-    if (new Date(newReservation.startDate) < new Date()) {
-        res.status(400).json({ message: "Start date must be in the future" });
-        return;
-    }// date bonne future
-
-    if (newReservation.spot.isAvailable === false) {
-        res.status(400).json({ message: "Selected parking spot is not available" });
-        return;
-    }// spot disponible
-
-    if (user.role == 'user') {
-        if (new Date(newReservation.startDate) >= new Date(newReservation.endDate)) {
-            res.status(400).json({ message: "Start date must be before end date" });
-            return;
-        }
-    }
-    
-    
 
     try {
+        const checkResult = await checkReservation(newReservation);
+
+        if (!checkResult.valid) {
+            res.status(400).json({ message: checkResult.message });
+            return;
+        }
+
         const createdReservation = await createReservationInDB(newReservation);
         res.status(201).json(createdReservation);
-    }
-
-    catch (error) {
+    } catch (error) {
         console.error("Error creating reservation:", error);
         res.status(500).json({ message: "Internal server error" });
     }
@@ -120,4 +92,25 @@ export const checkedInReservation = async (req: Request, res: Response) => {
         res.status(error.statusCode || 500).json({ message: error.message || "Internal server error" });
         return;
     }
+};
+
+export const patchReservation = async (req: Request, res: Response) => {
+    const reservationId = req.params.id;
+    const updatedReservationData = req.body;
+
+    try{
+        const actualReservation = await getReservationByIdFromDB(reservationId);
+        if (!actualReservation) {
+            res.status(404).json({ message: "Reservation not found" });
+            return;
+        }
+        const updatedReservation = updateReservationInDB(updatedReservationData);
+        res.status(200).json(updatedReservation);    
+
+    }
+    catch (error) {
+        console.error("Error updating reservation:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+
 };
