@@ -1,5 +1,5 @@
 import { get } from "http";
-import { getReservationsFromDB, cancelReservationInDB, createReservationInDB, updateReservationInDB } from "../models/reservationModel";
+import { getReservationsFromDB, cancelReservationInDB, createReservationInDB, updateReservationInDB, getReservationByIdFromDB } from "../models/reservationModel";
 import { getUserById } from "../models/userModel";
 import { Request, Response } from "express";
 import { create } from "domain";
@@ -23,8 +23,7 @@ export const getReservations = async (req: Request, res: Response) => {
 export const getReservationById = async (req: Request, res: Response) => {
     const reservationId = req.params.id;
     try {
-        const reservations = await getReservationsFromDB();
-        const reservation = reservations.find(r => r.id === reservationId);
+        const reservation = await getReservationByIdFromDB(reservationId);
         if (!reservation) {
             res.status(404).json({ message: "Reservation not found" });
             return;
@@ -42,7 +41,8 @@ export const getReservationsByUser = async (req: Request, res: Response) => {
         const reservations = await getReservationsFromDB();
         const userReservations = reservations.filter(r => r.userId === userId);
         if (!userReservations || userReservations.length === 0) {
-            return res.status(404).json({ message: "No reservations found for this user" });
+            res.status(404).json({ message: "No reservations found for this user" });
+            return;
         }
         res.status(200).json(userReservations);
     } catch (error) {
@@ -57,10 +57,10 @@ export const cancelReservation = async (req: Request, res: Response) => {
         const reservations = await getReservationsFromDB();
         const reservationIndex = reservations.findIndex(r => r.id === reservationId);
         if (reservationIndex === -1) {
-            return res.status(404).json({ message: "Reservation not found" });
+            res.status(404).json({ message: "Reservation not found" });
+            return;
         }
 
-        // Update the reservation status to 'cancelled'
         await cancelReservationInDB(reservations[reservationIndex].id);
 
         res.status(200).json(reservations[reservationIndex]);
@@ -76,28 +76,33 @@ export const createReservation = async (req: Request, res: Response) => {
     const user = await getUserById(userId);
 
     if (!newReservation.user || !newReservation.spot || !newReservation.startDate || !newReservation.endDate) {
-        return res.status(400).json({ message: "Missing required reservation fields" });
+         res.status(400).json({ message: "Missing required reservation fields" });
+         return;
     }
 
-   
+    
     if (new Date(newReservation.startDate) >= new Date(newReservation.endDate)) {
-        return res.status(400).json({ message: "Start date must be before end date" });
+        res.status(400).json({ message: "Start date must be before end date" });
+        return;
     }// date bonne 
 
     if (new Date(newReservation.startDate) < new Date()) {
-        return res.status(400).json({ message: "Start date must be in the future" });
+        res.status(400).json({ message: "Start date must be in the future" });
+        return;
     }// date bonne future
 
     if (newReservation.spot.isAvailable === false) {
-        return res.status(400).json({ message: "Selected parking spot is not available" });
+        res.status(400).json({ message: "Selected parking spot is not available" });
+        return;
     }// spot disponible
 
     if (user.role == 'user') {
         if (new Date(newReservation.startDate) >= new Date(newReservation.endDate)) {
-        return res.status(400).json({ message: "Start date must be before end date" });
+            res.status(400).json({ message: "Start date must be before end date" });
+            return;
         }
     }
-
+    
     
 
     try {
@@ -118,7 +123,8 @@ export const checkedInReservation = async (req: Request, res: Response) => {
         const reservationIndex = reservations.findIndex(r => r.id === reservationId);
         
         if (reservationIndex === -1) {
-            return res.status(404).json({ message: "Reservation not found" });
+            res.status(404).json({ message: "Reservation not found" });
+            return
         }
 
         await updateReservationInDB({
