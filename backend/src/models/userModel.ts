@@ -19,6 +19,7 @@ export async function getUserByLogin(login: string): Promise<UserModel> {
     return user as UserModel;
 }
 
+
 export async function getAllUsers(): Promise<UserModel[]> {
     const query = 'SELECT * FROM users';
     const result = await pool.query(query);

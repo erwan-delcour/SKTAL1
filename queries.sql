@@ -11,6 +11,8 @@ CREATE TABLE users (
 INSERT INTO users (email, login, password)
 VALUES ('user@example.com', 'username', '$2b$10$cMIWLjsU9aVp29H5AjeNau.hnClnZ6CBnTPSrSF850I/GQFWh1BIG');
 
+
+
 CREATE TABLE places (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     isAvailable BOOLEAN NOT NULL DEFAULT TRUE,
