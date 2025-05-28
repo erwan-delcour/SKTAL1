@@ -27,7 +27,7 @@ interface ReservationsListProps {
 }
 
 export function ReservationsList({reservations, onReservationCancelled}: ReservationsListProps) {
-    const {toast} = useToast()
+    const {success} = useToast()
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
     const [reservationToCancel, setReservationToCancel] = useState<number | null>(null)
 
@@ -42,10 +42,7 @@ export function ReservationsList({reservations, onReservationCancelled}: Reserva
             onReservationCancelled(reservationToCancel)
 
             // Show success toast
-            // toast({
-            //     title: "Reservation cancelled",
-            //     description: "Your parking reservation has been successfully cancelled.",
-            // })
+            success("Your parking reservation has been successfully cancelled.")
 
             // Close the dialog
             setCancelDialogOpen(false)

@@ -22,7 +22,7 @@ interface ReservationCalendarProps {
 }
 
 export function ReservationCalendar({ onReservationCreated }: ReservationCalendarProps) {
-  const { toast } = useToast()
+  const { toast, success, error } = useToast()
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [needsCharging, setNeedsCharging] = useState(false)
   const [parkingArea, setParkingArea] = useState("any")
@@ -39,11 +39,7 @@ export function ReservationCalendar({ onReservationCreated }: ReservationCalenda
 
   const handleSubmit = () => {
     if (!date) {
-      // toast({
-      //   title: "Error",
-      //   description: "Please select a date for your reservation.",
-      //   variant: "destructive",
-      // })
+      error("Please select a date for your reservation.")
       return
     }
 
@@ -87,10 +83,7 @@ export function ReservationCalendar({ onReservationCreated }: ReservationCalenda
       }
 
       // Show success toast
-      // toast({
-      //   title: "Reservation created",
-      //   description: `Your parking spot ${spotId} has been reserved for ${formatDate(date)}.`,
-      // })
+      success(`Your parking spot ${spotId} has been reserved for ${formatDate(date)}.`)
 
       // Reset form
       setIsSubmitting(false)

@@ -20,7 +20,7 @@ interface CheckInFormProps {
 }
 
 export function CheckInForm({ reservations, onCheckIn }: CheckInFormProps) {
-  const { toast } = useToast()
+  const { toast, success, error } = useToast()
   const [spotId, setSpotId] = useState("")
   const [isCheckedIn, setIsCheckedIn] = useState(false)
   const [checkedInSpot, setCheckedInSpot] = useState("")
@@ -28,11 +28,7 @@ export function CheckInForm({ reservations, onCheckIn }: CheckInFormProps) {
 
   const handleCheckIn = () => {
     if (!spotId.match(/^[A-F][0-9]{2}$/)) {
-      // toast({
-      //   title: "Invalid spot ID",
-      //   description: "Please enter a valid spot ID in the format: Row (A-F) + Number (01-10)",
-      //   variant: "destructive",
-      // })
+      error("Veuillez entrer un identifiant de place valide au format : Rangée (A-F) + Numéro (01-10)")
       return
     }
 
@@ -43,11 +39,7 @@ export function CheckInForm({ reservations, onCheckIn }: CheckInFormProps) {
 
     if (!reservation) {
       setIsSubmitting(false)
-      // toast({
-      //   title: "No reservation found",
-      //   description: `You don't have a reservation for spot ${spotId}. Please check the spot ID and try again.`,
-      //   variant: "destructive",
-      // })
+      error(`Vous n'avez pas de réservation pour la place ${spotId}. Veuillez vérifier l'identifiant et réessayer.`)
       return
     }
 
@@ -62,10 +54,7 @@ export function CheckInForm({ reservations, onCheckIn }: CheckInFormProps) {
       setIsSubmitting(false)
 
       // Show success toast
-      // toast({
-      //   title: "Check-in successful",
-      //   description: `You have successfully checked in to spot ${spotId}.`,
-      // })
+      success(`Vous avez bien effectué le check-in à la place ${spotId}.`)
     }, 1000)
   }
 
