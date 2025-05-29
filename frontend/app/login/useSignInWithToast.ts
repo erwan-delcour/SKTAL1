@@ -31,15 +31,9 @@ export const useSignInWithToast = () => {
     }
     
     lastProcessedState.current = `${state.message}-${state.success}`
-    
-    if (state?.success === true) {
+      if (state?.success === true) {
       success(state.message)
-      // Rediriger après avoir affiché le toast de succès
-      if (state?.redirect) {
-        setTimeout(() => {
-          router.push(state.redirect!)
-        }, 1000) // Délai pour laisser le temps au toast de s'afficher
-      }
+      // La redirection est maintenant gérée directement dans l'action serveur
     } else if (state?.success === false) {
       error(state.message)
     }
