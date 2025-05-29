@@ -33,16 +33,24 @@ function hasAccess(role: string, pathname: string): boolean {
 
 export async function middleware(request: NextRequest) {
     const {pathname} = request.nextUrl;
-
+    console.log('Middleware executing for:', pathname);
+    
     // Handle logout route
     if (pathname === '/logout') {
+        console.log('Logout route detected, clearing token cookie');
         const response = NextResponse.redirect(new URL('/login', request.url));
-        response.cookies.delete('token');
+        // Properly delete the token cookie with same settings as when it was set
+        response.cookies.set('token', '', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            path: '/',
+            expires: new Date(0)
+        });
         return response;
-    }
-
-    // Get authentication token from cookies
+    }    // Get authentication token from cookies
     const token = request.cookies.get('token')?.value;
+    console.log('Token from cookies:', token ? 'Present' : 'Not present', 'for path:', pathname);
 
     const isAuthenticated = !!token;
     let userRole: string | null = null;
@@ -50,12 +58,18 @@ export async function middleware(request: NextRequest) {
     // Décoder le token pour extraire le rôle (sans vérification de signature)
     if (token) {
         userRole = getRoleFromToken(token);
-        
-        // Si le token n'est pas valide ou expiré
+        console.log('User role from token:', userRole);        // Si le token n'est pas valide ou expiré
         if (!userRole) {
             if (pathname.startsWith('/dashboard')) {
                 const response = NextResponse.redirect(new URL('/login', request.url));
-                response.cookies.delete('token');
+                // Properly delete the invalid token cookie with same settings as when it was set
+                response.cookies.set('token', '', {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'strict',
+                    path: '/',
+                    expires: new Date(0)
+                });
                 return response;
             }
         }
@@ -79,16 +93,11 @@ export async function middleware(request: NextRequest) {
         // Si pas de rôle détecté, rediriger vers employee par défaut
         if (!userRole) {
             const defaultUrl = new URL('/dashboard/employee', request.url);
-            return NextResponse.redirect(defaultUrl);
-        }
+            return NextResponse.redirect(defaultUrl);        }
     }
 
-    // Redirect authenticated users away from login page
-    if (pathname === '/login' && isAuthenticated && userRole) {
-        const defaultDashboard = getDefaultDashboard(userRole);
-        const dashboardUrl = new URL(defaultDashboard, request.url);
-        return NextResponse.redirect(dashboardUrl);
-    }
+    // Note: Suppression de la redirection automatique depuis /login pour éviter les conflits
+    // La redirection est maintenant gérée directement dans l'action de login
 
     return NextResponse.next();
 }

@@ -31,16 +31,16 @@ export default function LoginPage() {
         <Card >
           <form action={formAction} className="space-y-6">
             <CardHeader>
-              <CardTitle className="text-xl">Identify yourself</CardTitle>
+              <CardTitle className="text-xl">Login</CardTitle>
               <CardDescription>Access the parking reservation system</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-            <Label htmlFor="login">Login</Label>
+            <Label htmlFor="login">Username</Label>
             <Input
               id="login"
               type="login"
-              placeholder="Enter your login"
+              placeholder="Enter your login username"
               name="login"
               required
             />

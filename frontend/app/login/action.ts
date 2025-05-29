@@ -33,18 +33,18 @@ export const signInAction = async (
             };
         }
         const data = await response.json();
-        const cookieStore = await cookies();
+        const cookieStore = await cookies();        
         cookieStore.set("token", data.token, {
             httpOnly: true,
             secure: true,
             maxAge: 60 * 60 * 24 * 7, // 7 days
             sameSite: "strict",
+            path: "/",
         });
-        
-        // Décoder le token pour obtenir le rôle et rediriger vers le bon dashboard
-        let redirectPath = "/dashboard/employee"; // défaut
-        
+          // Décoder le token pour obtenir le rôle et rediriger vers le bon dashboard
         const userRole = getRoleFromToken(data.token);
+        
+        let redirectPath = "/dashboard/employee"; // défaut
         
         if (userRole) {
             // Rediriger selon le rôle
@@ -62,12 +62,8 @@ export const signInAction = async (
             }
         }
         
-        // Retourner le succès d'abord, puis rediriger dans le hook
-        return {
-            message: "Login successful !",
-            success: true,
-            redirect: redirectPath
-        };
+        // Redirection immédiate côté serveur après définition du cookie
+        redirect(redirectPath);
     } else {
         return {
             message: "Please enter your email and password",
