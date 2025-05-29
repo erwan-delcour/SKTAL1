@@ -1,6 +1,6 @@
 import type {NextRequest} from 'next/server';
 import {NextResponse} from 'next/server';
-import { decodeTokenUnsafe, getRoleFromToken } from '@/lib/jwt';
+import {getRoleFromToken} from '@/lib/jwt';
 
 // Mapping des rôles vers leurs dashboards autorisés
 const roleAccess = {
@@ -27,19 +27,17 @@ function getDefaultDashboard(role: string): string {
 function hasAccess(role: string, pathname: string): boolean {
     const allowedPaths = roleAccess[role as keyof typeof roleAccess];
     if (!allowedPaths) return false;
-    
+
     return allowedPaths.some(path => pathname.startsWith(path));
 }
 
 export async function middleware(request: NextRequest) {
     const {pathname} = request.nextUrl;
-    console.log('Middleware executing for:', pathname);
-    
+
     // Handle logout route
     if (pathname === '/logout') {
-        console.log('Logout route detected, clearing token cookie');
         const response = NextResponse.redirect(new URL('/login', request.url));
-        // Properly delete the token cookie with same settings as when it was set
+        // Properly delete the token cookie with the same settings as when it was set
         response.cookies.set('token', '', {
             httpOnly: true,
             secure: true,
@@ -50,7 +48,6 @@ export async function middleware(request: NextRequest) {
         return response;
     }    // Get authentication token from cookies
     const token = request.cookies.get('token')?.value;
-    console.log('Token from cookies:', token ? 'Present' : 'Not present', 'for path:', pathname);
 
     const isAuthenticated = !!token;
     let userRole: string | null = null;
@@ -58,7 +55,6 @@ export async function middleware(request: NextRequest) {
     // Décoder le token pour extraire le rôle (sans vérification de signature)
     if (token) {
         userRole = getRoleFromToken(token);
-        console.log('User role from token:', userRole);        // Si le token n'est pas valide ou expiré
         if (!userRole) {
             if (pathname.startsWith('/dashboard')) {
                 const response = NextResponse.redirect(new URL('/login', request.url));
@@ -93,7 +89,8 @@ export async function middleware(request: NextRequest) {
         // Si pas de rôle détecté, rediriger vers employee par défaut
         if (!userRole) {
             const defaultUrl = new URL('/dashboard/employee', request.url);
-            return NextResponse.redirect(defaultUrl);        }
+            return NextResponse.redirect(defaultUrl);
+        }
     }
 
     // Note: Suppression de la redirection automatique depuis /login pour éviter les conflits
