@@ -91,29 +91,7 @@ export function CheckInForm({ reservations, onCheckIn }: CheckInFormProps) {
   }
 
   return (
-    <Tabs defaultValue="manual" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="scan" className="flex items-center gap-2">
-          <QrCode className="h-4 w-4" />
-          Scan QR Code
-        </TabsTrigger>
-        <TabsTrigger value="manual" className="flex items-center gap-2">
-          <Keyboard className="h-4 w-4" />
-          Enter Manually
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value="scan" className="space-y-4 py-4">
-        <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 text-center">
-          <QrCode className="h-16 w-16 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium">Scan QR Code</h3>
-          <p className="text-sm text-muted-foreground max-w-md mt-2">
-            Point your camera at the QR code displayed at your parking spot to check in.
-          </p>
-          <Button className="mt-4">Open Camera</Button>
-        </div>
-      </TabsContent>
-      <TabsContent value="manual" className="space-y-4 py-4">
-        <div className="space-y-4">
+    <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="spot-id">Parking Spot ID</Label>
             <Input
@@ -128,7 +106,5 @@ export function CheckInForm({ reservations, onCheckIn }: CheckInFormProps) {
             {isSubmitting ? "Checking in..." : "Check In"}
           </Button>
         </div>
-      </TabsContent>
-    </Tabs>
   )
 }

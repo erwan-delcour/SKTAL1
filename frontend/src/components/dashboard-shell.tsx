@@ -113,7 +113,7 @@ export function DashboardShell({ children, title, description, userRole }: Dashb
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src="/placeholder-user.jpg" alt="User" />
+                    <AvatarImage src="https://github.com/shadcn.png" alt="User" />
                     <AvatarFallback>
                       {userRole === "Employee" ? "JD" : userRole === "Secretary" ? "AS" : "MG"}
                     </AvatarFallback>

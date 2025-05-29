@@ -89,26 +89,26 @@ export function ReservationCalendar({ onReservationCreated }: ReservationCalenda
       setIsSubmitting(false)
     }, 1000)
   }
-
   return (
     <div className="space-y-4">
-      <Calendar
-        mode="single"
-        selected={date}
-        onSelect={setDate}
-        className="rounded-md border"
-        disabled={(date) => {
-          // Disable past dates and dates more than 5 days in the future
+      <div className="flex">
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={setDate}
+          className="rounded-md w-fit"
+          disabled={(date) => {          // Disable past dates and dates more than 5 days in the future
           const today = new Date()
           today.setHours(0, 0, 0, 0)
-
+          
           const maxDate = new Date()
           maxDate.setDate(maxDate.getDate() + 5)
           maxDate.setHours(23, 59, 59, 999)
-
+          
           return date < today || date > maxDate
         }}
       />
+      </div>
 
       <div className="space-y-4 px-2">
         <div className="flex items-center space-x-2">

@@ -162,8 +162,8 @@ export default function EmployeeDashboardPage() {
                     <div className="grid gap-4 md:grid-cols-2">
                         <Card className="col-span-1">
                             <CardHeader>
-                                <CardTitle>Make a Reservation</CardTitle>
-                                <CardDescription>Select dates and parking spot preferences</CardDescription>
+                                <CardTitle>Request a Reservation</CardTitle>
+                                <CardDescription>Select dates and parking area preferences</CardDescription>
                             </CardHeader>
                             <CardContent className="pl-2">
                                 <ReservationCalendar onReservationCreated={handleReservationCreated}/>
@@ -185,7 +185,7 @@ export default function EmployeeDashboardPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle>Check-in to Your Spot</CardTitle>
-                            <CardDescription>Scan the QR code at your parking spot or enter the spot ID
+                            <CardDescription>Enter the spot ID
                                 manually</CardDescription>
                         </CardHeader>
                         <CardContent>

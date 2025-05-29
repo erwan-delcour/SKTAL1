@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { CalendarDays, Car, LineChart, LogIn, Users } from "lucide-react";
 import Link from "next/link";
 
-export default function Home() {
+export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col w-full items-center justify-center">
       <HeaderLayout />
-      <main className="w-full">
-        <section className="w-full py-12 bg-muted">
-          <div className="px-16">
+      <main className="flex-1">
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
+          <div className="px-4 md:px-12">
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
               <div className="space-y-4">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
