@@ -136,7 +136,7 @@ export function DashboardShell({ children, title, description, userRole }: Dashb
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <LogOut className="mr-2 h-4 w-4" />
-                  <Link href="/login">Log out</Link>
+                  <Link href="/logout">Log out</Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
