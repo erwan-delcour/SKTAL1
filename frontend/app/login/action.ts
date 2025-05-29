@@ -26,12 +26,20 @@ export const signInAction = async (
                 },
             });
 
+        if (response.status === 500) {
+            return {
+                message: "Internal server error",
+                success: false,
+            };
+        }
+        
         if (!response.ok) {
             return {
                 message: "Invalid credentials",
                 success: false,
             };
         }
+
         const data = await response.json();
         const cookieStore = await cookies();        
         cookieStore.set("token", data.token, {
