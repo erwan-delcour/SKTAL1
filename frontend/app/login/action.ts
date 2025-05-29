@@ -64,7 +64,7 @@ export const signInAction = async (
         
         // Retourner le succès d'abord, puis rediriger dans le hook
         return {
-            message: "Connexion réussie !",
+            message: "Login successful !",
             success: true,
             redirect: redirectPath
         };

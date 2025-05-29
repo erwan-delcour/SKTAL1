@@ -34,6 +34,13 @@ function hasAccess(role: string, pathname: string): boolean {
 export async function middleware(request: NextRequest) {
     const {pathname} = request.nextUrl;
 
+    // Handle logout route
+    if (pathname === '/logout') {
+        const response = NextResponse.redirect(new URL('/login', request.url));
+        response.cookies.delete('token');
+        return response;
+    }
+
     // Get authentication token from cookies
     const token = request.cookies.get('token')?.value;
 
@@ -87,5 +94,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/login', '/dashboard/:path*'],
+    matcher: ['/login', '/logout', '/dashboard/:path*'],
 }
