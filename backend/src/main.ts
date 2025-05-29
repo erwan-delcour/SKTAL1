@@ -2,10 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import * as authRoutes from './routes/authRoutes';
 import * as reservationRoutes from './routes/reservationRoutes';
-<<<<<<< HEAD
-=======
 import * as statsRoutes from './routes/statsRoutes';
->>>>>>> origin/backRendu3
 import morgan = require('morgan');
 dotenv.config();
 
@@ -21,10 +18,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes.default);
 app.use('/api/reservations', reservationRoutes.default);
-<<<<<<< HEAD
-=======
 app.use('/api/stats', statsRoutes.default);
->>>>>>> origin/backRendu3
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
