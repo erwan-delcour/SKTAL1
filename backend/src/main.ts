@@ -3,13 +3,21 @@ import dotenv from 'dotenv';
 import * as authRoutes from './routes/authRoutes';
 import * as reservationRoutes from './routes/reservationRoutes';
 import * as statsRoutes from './routes/statsRoutes';
+import cors, { CorsOptions } from 'cors';
 import morgan = require('morgan');
+
 dotenv.config();
 
+const corsOptions: CorsOptions = {
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
 const app = express();
 const PORT = process.env.PORT || 3001;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors(corsOptions));
 app.use(morgan('dev'));
 
 app.get('/', (req, res) => {
