@@ -98,7 +98,6 @@ create table reservations (
     Foreign Key (spotId) REFERENCES places(id)
 );
 
-DROP TABLE reservationsPending;
 create table reservationsPending (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     userId UUID NOT NULL,
