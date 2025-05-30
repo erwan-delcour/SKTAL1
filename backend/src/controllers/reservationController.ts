@@ -1,4 +1,4 @@
-import { getReservationsFromDB, cancelReservationInDB, createReservationInDB, updateReservationInDB, getReservationByIdFromDB, getReservationsByUserFromDB, checkedInReservationInDB, getReservationIdFromTodayBySpotid, checkReservation, refuseReservationInDB, createPendingReservationInDB, getPendingReservationsFromDB } from "../models/reservationModel";
+import { getReservationsFromDB, cancelPendingReservationInDB, findAvailableSpot, createReservationInDB, updateReservationInDB, getReservationByIdFromDB, getReservationsByUserFromDB, checkedInReservationInDB, getReservationIdFromTodayBySpotid, checkReservation, refuseReservationInDB, createPendingReservationInDB, getPendingReservationsFromDB, getPendingReservationByIdFromDB } from "../models/reservationModel";
 import { getUserById } from "../models/userModel";
 import { Request, Response } from "express";
 
@@ -39,11 +39,6 @@ export const getPendingReservations = async (req: Request, res: Response) => {
         const user = await getUserById(userId);
         if (!user) {
             res.status(403).json({ message: "User not found" });
-        }
-
-        if (!user.role || user.role !== "secretary") {
-            res.status(403).json({ message: "Access denied" });
-            return;
         }
 
         const reservations = await getPendingReservationsFromDB();
@@ -102,7 +97,11 @@ export const cancelReservation = async (req: Request, res: Response) => {
             return;
         }
 
-        await cancelReservationInDB(reservation.id);
+        if (!reservation.id) {
+            res.status(400).json({ message: "Reservation ID is missing" });
+            return;
+        }
+        await cancelPendingReservationInDB(reservation.id);
 
         res.status(200).json(reservation);
     } catch (error) {
@@ -136,6 +135,10 @@ export const refuseReservation = async (req: Request, res: Response) => {
             return;
         }
 
+        if (!reservation.id) {
+            res.status(400).json({ message: "Reservation ID is missing" });
+            return;
+        }
         await refuseReservationInDB(reservation.id);
 
         res.status(200).json(reservation);
@@ -146,10 +149,33 @@ export const refuseReservation = async (req: Request, res: Response) => {
 };
 
 export const createReservation = async (req: Request, res: Response) => {
-    const newReservation = req.body;
-    const spotId = req.body.pendingReservationId;
+    const pendingReservationId = req.body.pendingReservationId;
 
     try {
+        
+        const pending = await getPendingReservationByIdFromDB(pendingReservationId);
+        if (!pending) {
+            res.status(404).json({ message: "Pending reservation not found" });
+            return;
+        }
+
+       
+        const spot = await findAvailableSpot(pending.startDate, pending.endDate, pending.needsCharger);
+        if (!spot) {
+            res.status(409).json({ message: "No available parking spot for the requirements" });
+            return;
+        }
+
+        const newReservation = {
+            userId: pending.userId,
+            spot: spot,
+            needsCharger: pending.needsCharger,
+            startDate: pending.startDate,
+            endDate: pending.endDate,
+            statusChecked: false,
+            checkInTime: undefined
+        };
+
         const checkResult = await checkReservation(newReservation);
 
         if (!checkResult.valid) {
@@ -157,8 +183,9 @@ export const createReservation = async (req: Request, res: Response) => {
             return;
         }
 
-        const createdReservation = await createReservationInDB(newReservation, spotId);
+        const createdReservation = await createReservationInDB(newReservation, pendingReservationId);
         res.status(201).json(createdReservation);
+
     } catch (error) {
         console.error("Error creating reservation:", error);
         res.status(500).json({ message: "Internal server error" });
