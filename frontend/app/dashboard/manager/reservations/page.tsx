@@ -39,7 +39,6 @@ interface User {
     department: string;
 }
 
-// Mock data for users (consistent with other parts of the app)
 const mockUsers: User[] = [
     {id: "user1", name: "John Doe", email: "john.doe@company.com", department: "Engineering"},
     {id: "user2", name: "Alice Smith", email: "alice.smith@company.com", department: "Administration"},
@@ -49,7 +48,6 @@ const mockUsers: User[] = [
 ]
 
 export default function ManagerReservationsPage() {
-    // const { toast } = useToast(); // Keep if other view-related actions might use toast
     const [selectedDateForCalendarView, setSelectedDateForCalendarView] = useState<Date | undefined>(new Date())
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
