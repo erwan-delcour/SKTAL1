@@ -7,7 +7,7 @@ import {cn} from "@/lib/utils";
 import {Popover, PopoverContent, PopoverTrigger} from "@radix-ui/react-popover";
 import {format} from "date-fns";
 import {CalendarIcon, Car, Check, Edit, Filter, List, Map, Plus, Search, Trash, Zap} from "lucide-react"
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import {Calendar} from "@/components/ui/calendar";
 import {Checkbox} from "@/components/ui/checkbox";
 import {Label} from "@/components/ui/label";
@@ -26,6 +26,7 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/compo
 import {Badge} from "@/components/ui/badge";
 import {ParkingMapOverview} from "@/components/parking-map-overview";
 import {Toaster} from "@/components/ui/sonner";
+import {ReservationAction} from "./reservationAction";
 
 // Types
 interface Reservation {
@@ -68,72 +69,38 @@ export default function SecretaryReservationsPage() {
     const [isElectricFilter, setIsElectricFilter] = useState(false)
 
     // Mock data for reservations
-    const [reservations, setReservations] = useState<Reservation[]>([
-        {
-            id: 1,
-            userId: "user1",
-            userName: "John Doe",
-            userDepartment: "Engineering",
-            date: "May 27, 2025",
-            spot: "A03",
-            time: "Full day (8:00 AM - 6:00 PM)",
-            isElectric: true,
-            status: "upcoming",
-            checkedIn: false,
-        },
-        {
-            id: 2,
-            userId: "user2",
-            userName: "Alice Smith",
-            userDepartment: "Administration",
-            date: "May 28, 2025",
-            spot: "B07",
-            time: "Morning (8:00 AM - 1:00 PM)",
-            isElectric: false,
-            status: "upcoming",
-            checkedIn: false,
-        },
-        {
-            id: 3,
-            userId: "user3",
-            userName: "Bob Johnson",
-            userDepartment: "Marketing",
-            date: "May 29, 2025",
-            spot: "C04",
-            time: "Afternoon (1:00 PM - 6:00 PM)",
-            isElectric: false,
-            status: "upcoming",
-            checkedIn: false,
-        },
-        {
-            id: 4,
-            userId: "user4",
-            userName: "Emma Wilson",
-            userDepartment: "Finance",
-            date: "May 26, 2025",
-            spot: "F02",
-            time: "Full day (8:00 AM - 6:00 PM)",
-            isElectric: true,
-            status: "active",
-            checkedIn: true,
-        },
-        {
-            id: 5,
-            userId: "user5",
-            userName: "Mike Green",
-            userDepartment: "Executive",
-            date: "May 26, 2025",
-            spot: "D09",
-            time: "Full day (8:00 AM - 6:00 PM)",
-            isElectric: false,
-            status: "active",
-            checkedIn: false,
-        },
-    ])
+    const [reservations, setReservations] = useState<Reservation[]>([])
 
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [reservationToEdit, setReservationToEdit] = useState<Reservation | null>(null)
+
+    // Ajout d'un état pour les demandes de réservation (actions)
+    const [reservationActions, setReservationActions] = useState<ReservationAction[]>([]);
+    const [actionToEdit, setActionToEdit] = useState<ReservationAction | null>(null);
+    const [acceptedRequests, setAcceptedRequests] = useState<number[]>([]);
+
+    useEffect(() => {
+        // Récupère les réservations en attente (pending)
+        ReservationAction.fetchPending().then((pending) => {
+            setReservationActions(pending);
+        });
+        // Récupère les réservations confirmées (hors pending)
+        ReservationAction.fetchAllConfirmed().then((confirmed) => {
+            setReservations(confirmed.map((r: any) => ({
+                id: r.id,
+                userId: r.userId,
+                userName: r.userName,
+                userDepartment: r.userDepartment,
+                date: r.date,
+                spot: r.spot,
+                time: r.time,
+                isElectric: r.isElectric,
+                status: r.status,
+                checkedIn: r.checkedIn,
+            })));
+        });
+    }, []);
 
     const handleCreateReservation = (newReservationData: Omit<Reservation, "id" | "userName" | "userDepartment" | "status" | "checkedIn">) => {
         const user = mockUsers.find((u) => u.id === newReservationData.userId)
@@ -182,7 +149,79 @@ export default function SecretaryReservationsPage() {
         success("Check-in successful.");
     }
 
-    const filteredReservations = reservations.filter((reservation) => {
+    const handleAcceptAction = async (actionId: number) => {
+        const action = reservationActions.find(a => a.id === actionId);
+        if (!action) return;
+        // TODO: Remplacer ce spot par la vraie sélection de place (ici exemple statique)
+        const spot = {
+            id: '411e23cd-0c2e-448d-bffe-e5934b6e2a9d',
+            isAvailable: true,
+            hasCharger: true,
+            row: 'A',
+            spotNumber: '01'
+        };
+        // TODO: Remplacer par le vrai userId lié à la demande
+        const user = mockUsers[0];
+        await ReservationAction.acceptWithSpot(
+            action,
+            spot,
+            user.id,
+            (id) => setReservationActions(prev => prev.map(a => a.id === id ? { ...a, status: 'accepted' } : a)),
+            success
+        );
+    };
+
+    // Filtrer les demandes à valider : uniquement celles des employés
+    const filteredReservationActions = reservationActions.filter(a => a.type === "Employé");
+
+    // Fusionne les réservations confirmées et les demandes en attente pour l'affichage dans la tab "list"
+    const [allReservations, setAllReservations] = useState<any[]>([]);
+
+    // Met à jour la liste triée après acceptation ou changement
+    useEffect(() => {
+        const merged = [
+            ...reservations.map(r => ({
+                id: r.id,
+                userName: r.userName,
+                userDepartment: r.userDepartment,
+                spot: r.spot,
+                date: r.date,
+                dateObj: new Date(r.date),
+                time: r.time,
+                isElectric: r.isElectric,
+                status: r.status,
+                checkedIn: r.checkedIn,
+                isRequest: false,
+                vehicle: undefined,
+                description: undefined,
+            })),
+            ...reservationActions.map(a => ({
+                id: a.id + 10000,
+                userName: '-',
+                userDepartment: '-',
+                spot: '-',
+                date: a.date,
+                dateObj: new Date(a.date),
+                time: a.time,
+                isElectric: false,
+                status: (a.status === 'accepted' ? 'accepted' : 'pending'),
+                checkedIn: false,
+                isRequest: a.status !== 'accepted',
+                vehicle: a.vehicle,
+                description: a.description,
+            }))
+        ];
+        setAllReservations(merged);
+    }, [reservations, reservationActions]);
+
+    // Trie la liste uniquement après acceptation
+    const sortedReservations = [...allReservations].sort((a, b) => {
+        if (a.status === 'accepted' && b.status !== 'accepted') return 1;
+        if (a.status !== 'accepted' && b.status === 'accepted') return -1;
+        return a.dateObj.getTime() - b.dateObj.getTime();
+    });
+
+    const filteredReservations = sortedReservations.filter((reservation) => {
         const matchesSearch =
             searchQuery === "" ||
             reservation.spot.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -190,7 +229,7 @@ export default function SecretaryReservationsPage() {
             reservation.date.toLowerCase().includes(searchQuery.toLowerCase())
         const matchesStatus = statusFilter === "all" || reservation.status === statusFilter
         const matchesDate = !dateFilter || reservation.date === format(dateFilter, "MMM d, yyyy")
-        const matchesUser = userFilter === "all" || reservation.userId === userFilter
+        const matchesUser = userFilter === "all" || reservation.userName === userFilter
         const matchesDepartment = departmentFilter === "all" || reservation.userDepartment === departmentFilter
         const matchesElectric = !isElectricFilter || reservation.isElectric === isElectricFilter
 
@@ -269,7 +308,7 @@ export default function SecretaryReservationsPage() {
                                             <SelectContent>
                                                 <SelectItem value="all">All users</SelectItem>
                                                 {mockUsers.map((user: User) => (
-                                                    <SelectItem key={user.id} value={user.id}>
+                                                    <SelectItem key={user.id} value={user.name}>
                                                         {user.name}
                                                     </SelectItem>
                                                 ))}
@@ -400,7 +439,7 @@ export default function SecretaryReservationsPage() {
                                                 {reservation.isElectric && <Zap className="h-4 w-4 text-yellow-500"/>}
                                             </div>
                                             <div>{reservation.date}</div>
-                                            <div>{reservation.time.split(" (")[0]}</div>
+                                            <div>{reservation.time.split ? reservation.time.split(" (")[0] : reservation.time}</div>
                                             <div>
                                                 <Badge
                                                     variant={
@@ -408,81 +447,131 @@ export default function SecretaryReservationsPage() {
                                                             ? "default"
                                                             : reservation.status === "completed"
                                                                 ? "secondary"
-                                                                : "outline"
+                                                                : reservation.status === "pending"
+                                                                    ? "destructive"
+                                                                    : reservation.status === "accepted"
+                                                                        ? "success"
+                                                                        : "outline"
                                                     }
                                                 >
                                                     {reservation.status === "active"
                                                         ? "Active"
                                                         : reservation.status === "completed"
                                                             ? "Checked In"
-                                                            : "Upcoming"}
+                                                            : reservation.status === "pending"
+                                                                ? "Pending"
+                                                                : reservation.status === "accepted"
+                                                                    ? "Accepted"
+                                                                    : "Upcoming"}
                                                 </Badge>
                                             </div>
                                             <div className="flex justify-end gap-2">
-                                                {!reservation.checkedIn && reservation.status === "active" && (
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="gap-1"
-                                                        onClick={() => handleCheckIn(reservation.id)}
-                                                    >
-                                                        <Check className="h-3 w-3"/>
-                                                        Check In
-                                                    </Button>
-                                                )}
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="gap-1"
-                                                    onClick={() => {
-                                                        setReservationToEdit(reservation)
-                                                        setIsEditDialogOpen(true)
-                                                    }}
-                                                >
-                                                    <Edit className="h-3 w-3"/>
-                                                    Edit
-                                                </Button>
-                                                <Dialog>
-                                                    <DialogTrigger asChild>
-                                                        <Button variant="destructive" size="sm" className="gap-1">
+                                                {/* Actions pour les demandes en attente ou acceptées */}
+                                                {(reservation.status === "pending" || reservation.status === "accepted") ? (
+                                                    <>
+                                                        {reservation.status === "pending" && (
+                                                            <Button
+                                                                variant="default"
+                                                                size="sm"
+                                                                onClick={() => handleAcceptAction(reservation.id - 10000)}
+                                                            >Accept</Button>
+                                                        )}
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="gap-1"
+                                                            onClick={() => {
+                                                                const action = reservationActions.find(a => a.id === reservation.id - 10000);
+                                                                if (action) {
+                                                                    setActionToEdit(action);
+                                                                    setIsEditDialogOpen(true);
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Edit className="h-3 w-3"/>
+                                                            Edit
+                                                        </Button>
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            className="gap-1"
+                                                            onClick={() => handleCancelReservation(reservation.id - 10000)}
+                                                        >
                                                             <Trash className="h-3 w-3"/>
                                                             Cancel
                                                         </Button>
-                                                    </DialogTrigger>
-                                                    <DialogContent>
-                                                        <DialogHeader>
-                                                            <DialogTitle>Cancel Reservation</DialogTitle>
-                                                            <DialogDescription>
-                                                                Are you sure you want to cancel this parking reservation
-                                                                for {reservation.userName}?
-                                                                This action cannot be undone.
-                                                            </DialogDescription>
-                                                        </DialogHeader>
-                                                        <DialogFooter className="mt-4">
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        {!reservation.checkedIn && reservation.status === "active" && (
                                                             <Button
                                                                 variant="outline"
-                                                                onClick={() => {
-                                                                    document
-                                                                        .querySelector("[data-dialog-close]")
-                                                                        ?.dispatchEvent(new MouseEvent("click", {bubbles: true}))
-                                                                }}
+                                                                size="sm"
+                                                                className="gap-1"
+                                                                onClick={() => handleCheckIn(reservation.id)}
                                                             >
-                                                                Keep Reservation
+                                                                <Check className="h-3 w-3"/>
+                                                                Check In
                                                             </Button>
-                                                            <Button
-                                                                variant="destructive"
-                                                                onClick={() => {
-                                                                    handleCancelReservation(reservation.id)
-                                                                    document
-                                                                        .querySelector("[data-dialog-close]")
-                                                                        ?.dispatchEvent(new MouseEvent("click", {bubbles: true}))
-                                                                }}
-                                                            >
-                                                                Yes, Cancel
-                                                            </Button>
-                                                        </DialogFooter>
-                                                    </DialogContent>
-                                                </Dialog>
+                                                        )}
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="gap-1"
+                                                            onClick={() => {
+                                                                const res = reservations.find(r => r.id === reservation.id);
+                                                                if (res) {
+                                                                    setReservationToEdit(res);
+                                                                    setIsEditDialogOpen(true);
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Edit className="h-3 w-3"/>
+                                                            Edit
+                                                        </Button>
+                                                        <Dialog>
+                                                            <DialogTrigger asChild>
+                                                                <Button variant="destructive" size="sm" className="gap-1">
+                                                                    <Trash className="h-3 w-3"/>
+                                                                    Cancel
+                                                                </Button>
+                                                            </DialogTrigger>
+                                                            <DialogContent>
+                                                                <DialogHeader>
+                                                                    <DialogTitle>Cancel Reservation</DialogTitle>
+                                                                    <DialogDescription>
+                                                                        Are you sure you want to cancel this parking reservation
+                                                                        for {reservation.userName}?
+                                                                        This action cannot be undone.
+                                                                    </DialogDescription>
+                                                                </DialogHeader>
+                                                                <DialogFooter className="mt-4">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        onClick={() => {
+                                                                            document
+                                                                                .querySelector("[data-dialog-close]")
+                                                                                ?.dispatchEvent(new MouseEvent("click", {bubbles: true}))
+                                                                        }}
+                                                                    >
+                                                                        Keep Reservation
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="destructive"
+                                                                        onClick={() => {
+                                                                            handleCancelReservation(reservation.id)
+                                                                            document
+                                                                                .querySelector("[data-dialog-close]")
+                                                                                ?.dispatchEvent(new MouseEvent("click", {bubbles: true}))
+                                                                        }}
+                                                                    >
+                                                                        Yes, Cancel
+                                                                    </Button>
+                                                                </DialogFooter>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
@@ -591,12 +680,16 @@ export default function SecretaryReservationsPage() {
                 <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
                         <DialogTitle>Edit Reservation</DialogTitle>
-                        <DialogDescription>Modify the details for this parking reservation.</DialogDescription>
+                        <DialogDescription>Modifier la demande ou la réservation.</DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
                         {reservationToEdit && (
                             <ReservationForm onSubmit={handleEditReservation} users={mockUsers}
                                              initialData={reservationToEdit}/>
+                        )}
+                        {actionToEdit && (
+                            <ActionEditForm action={actionToEdit} onSubmit={handleEditReservation}
+                                            onCancel={() => setIsEditDialogOpen(false)}/>
                         )}
                     </div>
                 </DialogContent>

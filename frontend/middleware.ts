@@ -26,6 +26,7 @@ function getDefaultDashboard(role: string): string {
 // Fonction pour vérifier si un utilisateur a accès à une route
 function hasAccess(role: string, pathname: string): boolean {
     const allowedPaths = roleAccess[role as keyof typeof roleAccess];
+    console.log(allowedPaths);
     if (!allowedPaths) return false;
 
     return allowedPaths.some(path => pathname.startsWith(path));
@@ -55,6 +56,7 @@ export async function middleware(request: NextRequest) {
     // Décoder le token pour extraire le rôle (sans vérification de signature)
     if (token) {
         userRole = getRoleFromToken(token);
+        console.log(userRole);
         if (!userRole) {
             if (pathname.startsWith('/dashboard')) {
                 const response = NextResponse.redirect(new URL('/login', request.url));
@@ -95,6 +97,7 @@ export async function middleware(request: NextRequest) {
 
     // Note: Suppression de la redirection automatique depuis /login pour éviter les conflits
     // La redirection est maintenant gérée directement dans l'action de login
+    console.log(NextResponse.next());
 
     return NextResponse.next();
 }
