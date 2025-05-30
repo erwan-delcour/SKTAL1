@@ -1,4 +1,4 @@
-import { getReservationsFromDB, cancelReservationInDB, createReservationInDB, updateReservationInDB, getReservationByIdFromDB, getReservationsByUserFromDB, checkedInReservationInDB, getReservationIdFromTodayBySpotid } from "../models/reservationModel";
+import { getReservationsFromDB, cancelReservationInDB, createReservationInDB, updateReservationInDB, getReservationByIdFromDB, getReservationsByUserFromDB, checkedInReservationInDB, getReservationIdFromTodayBySpotid, checkReservation } from "../models/reservationModel";
 import { getUserById } from "../models/userModel";
 import { Request, Response } from "express";
 

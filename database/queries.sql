@@ -8,10 +8,10 @@ CREATE TABLE users (
     role TEXT DEFAULT 'user' NOT NULL
 );
 
-INSERT INTO users (email, login, password)
-VALUES ('user@example.com', 'username', '$2b$10$cMIWLjsU9aVp29H5AjeNau.hnClnZ6CBnTPSrSF850I/GQFWh1BIG');
-
-
+INSERT INTO users (email, login, password, role) VALUES 
+('user@example.com', 'username', '$2b$10$cMIWLjsU9aVp29H5AjeNau.hnClnZ6CBnTPSrSF850I/GQFWh1BIG', 'user'),
+('manager@example.com', 'manager', '$2b$10$ZWn8ZgOsSO61ozb2UKb5g.EMQBRdmEedl2hByo6Ld6x7tyNaFhpK6', 'manager'),
+('secretary@example.com', 'secretary', '$2b$10$DPFeMchkrRhrnd/PbXZFY.LK1wxsR9D0pF3RcDGG7Hai56JHSalAi', 'secretary');
 
 CREATE TABLE places (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -82,7 +82,7 @@ INSERT INTO places (row, spotNumber, hascharger) VALUES
 ('F', '08', TRUE),
 ('F', '09', TRUE),
 ('F', '10', TRUE);
-drop table reservations;
+
 create table reservations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     userId UUID NOT NULL,
