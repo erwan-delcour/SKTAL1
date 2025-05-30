@@ -68,3 +68,30 @@ export const getTodayFreeChargerSpotsCountFromDB = async (): Promise<number> => 
         });
 }
 
+export async function getAllPlacesStatusFromDB(): Promise<any[]> {
+    const getAllSpotsQuery = `
+        SELECT * from places
+    `;
+    const spots = await pool.query(getAllSpotsQuery);
+    console.log(spots.rows[0]);
+    if (!spots || spots.rows.length === 0) {
+        throw new Error("No spots found");
+    }
+    const getTodayReservationQuery = `
+        SELECT spotId FROM reservations
+        WHERE DATE(startDate) = CURRENT_DATE
+    `;
+    const todayReservations = await pool.query(getTodayReservationQuery);
+    console.log("Today reservations:", todayReservations.rows);
+    for(const spot of spots.rows) {
+        spot.isAvailable = true;
+        spot.isReserved = false;
+        if (todayReservations.rows.some((reservation: any) => reservation.spotid === spot.id)) {
+            console.log("Spot is reserved:", spot.id);
+            spot.isAvailable = false;
+            spot.isReserved = true;
+        }
+    }
+    
+    return spots.rows;
+}

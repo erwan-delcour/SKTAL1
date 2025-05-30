@@ -11,6 +11,7 @@ export const getReservations = async (req: Request, res: Response) => {
         const user = await getUserById(userId);
         if (!user) {
             res.status(403).json({ message: "User not found" });
+            return;
         }
 
         if (!user.role || user.role !== "secretary") {
@@ -40,6 +41,7 @@ export const getPendingReservations = async (req: Request, res: Response) => {
         const user = await getUserById(userId);
         if (!user) {
             res.status(403).json({ message: "User not found" });
+            return;
         }
 
         const reservations = await getPendingReservationsFromDB();
@@ -132,6 +134,7 @@ export const refusePendingReservation = async (req: Request, res: Response) => {
         const user = await getUserById(userId);
         if (!user) {
             res.status(403).json({ message: "User not found" });
+            return;
         }
 
         if (!user.role || user.role !== "secretary") {
