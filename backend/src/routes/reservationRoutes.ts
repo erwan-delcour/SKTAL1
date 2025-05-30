@@ -9,7 +9,7 @@ import {
 
 const router = Router();
 
-router.get("/", getReservations);
+router.get("/:id", getReservations);
 router.get("/:id", getReservationById);
 router.get("/user/:userId", getReservationsByUser);
 router.post("/checkin/:spotId", checkedInReservation);
