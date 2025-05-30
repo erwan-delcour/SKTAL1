@@ -14,6 +14,13 @@ export default interface Reservation {
   checkInTime?: Date;
 }
 
+export interface ReservationPending {
+  id: string;
+  userId: string;
+  needsCharger: boolean;
+  startDate: Date;
+  endDate: Date;
+};
 
 export async function getReservationsFromDB(): Promise<Reservation[]> {
     const query = `
@@ -138,9 +145,10 @@ export async function getReservationsByUserFromDB(userId: string): Promise<Reser
         });
 }
 
-export function cancelReservationInDB(reservationId: string): Promise<void> {
+export async function cancelReservationInDB(reservationId: string): Promise<void> {
   const query = `
-        DELETE FROM reservations
+        UPDATE reservations
+        SET statusReservation = 'cancelled'
         WHERE id = $1
     `;
   return pool.query(query, [reservationId])
@@ -153,12 +161,28 @@ export function cancelReservationInDB(reservationId: string): Promise<void> {
     });
 }
 
-export function createReservationInDB(reservation: Reservation): Promise<Reservation> {
+export async function refuseReservationInDB(reservationId: string): Promise<void> {
+  const query = `
+        UPDATE reservations
+        SET statusReservation = 'refused'
+        WHERE id = $1
+    `;
+  return pool.query(query, [reservationId])
+    .then(() => {
+      console.log(`Reservation ${reservationId} refused`);
+    })
+    .catch(error => {
+      console.error('Error refusing reservation:', error);
+      throw new CustomError('Internal server error', 500);
+    });
+}
+
+export async function createReservationInDB(reservation: Reservation, pendingId : string): Promise<Reservation> {
   console.log('Creating reservation:', reservation);
 
   const query = `
-        INSERT INTO reservations (userId, spotId, needsCharger, startDate, endDate, checkInTime)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO reservations (userId, spotId, needsCharger, startDate, endDate)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id
     `;
   const values = [
@@ -167,20 +191,75 @@ export function createReservationInDB(reservation: Reservation): Promise<Reserva
     reservation.needsCharger,
     reservation.startDate,
     reservation.endDate,
-    reservation.checkInTime
   ];
 
-  return pool.query(query, values)
-    .then(result => {
-      if (result.rows.length === 0) {
-        throw new CustomError('Failed to create reservation', 500);
-      }
-      return { ...reservation, id: result.rows[0].id };
-    })
-    .catch(error => {
-      console.error('Error creating reservation:', error);
-      throw new CustomError('Internal server error', 500);
-    });
+  const result = await pool.query(query, values);
+
+  if (result.rows.length === 0) {
+    throw new CustomError('Failed to create reservation', 500);
+  }
+
+  const updatePendingQuery = `
+      UPDATE reservationsPending
+      SET statusReservation = 'accepted'
+      WHERE id = $1
+  `;
+  await pool.query(updatePendingQuery, [
+    pendingId
+  ]);
+  
+
+  return { ...reservation, id: result.rows[0].id };
+}
+
+export async function getPendingReservationsFromDB(): Promise<ReservationPending[]> {
+    const query = `
+        SELECT * FROM reservationsPending WHERE statusReservation = 'pending'
+    `;
+
+    return pool.query(query)
+        .then(result => {
+            if (result.rows.length === 0) {
+                throw new CustomError('No pending reservations found', 404);
+            }
+            return result.rows.map(row => ({
+                id: row.id,
+                userId: row.userid,
+                needsCharger: row.needscharger,
+                startDate: row.startdate,
+                endDate: row.enddate
+            }) as ReservationPending);
+        })
+        .catch(error => {
+            throw new CustomError('Internal server error', error.message || 'Unknown error');
+        });
+}
+
+export async function createPendingReservationInDB(reservation: ReservationPending) {
+    const query = `
+        INSERT INTO reservationsPending (userId, needsCharger, startDate, endDate)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id
+    `;
+
+    const values = [
+        reservation.userId,
+        reservation.needsCharger,
+        reservation.startDate,
+        reservation.endDate
+    ];
+
+    return pool.query(query, values)
+        .then(result => {
+            if (result.rows.length === 0) {
+                throw new CustomError('Failed to create pending reservation', 500);
+            }
+            return { ...reservation, id: result.rows[0].id };
+        })
+        .catch(error => {
+            console.error('Error creating pending reservation:', error);
+            throw new CustomError('Internal server error', 500);
+        });
 }
 
 export function getReservationsForSpotInPeriod(spotId: string, startDate: Date, endDate: Date): Promise<Reservation[]> {

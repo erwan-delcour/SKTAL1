@@ -8,10 +8,11 @@ CREATE TABLE users (
     role TEXT DEFAULT 'user' NOT NULL
 );
 
-INSERT INTO users (email, login, password) VALUES 
+INSERT INTO users (email, login, password, role) VALUES 
 ('user@example.com', 'username', '$2b$10$cMIWLjsU9aVp29H5AjeNau.hnClnZ6CBnTPSrSF850I/GQFWh1BIG', 'user'),
 ('manager@example.com', 'manager', '$2b$10$ZWn8ZgOsSO61ozb2UKb5g.EMQBRdmEedl2hByo6Ld6x7tyNaFhpK6', 'manager'),
 ('secretary@example.com', 'secretary', '$2b$10$DPFeMchkrRhrnd/PbXZFY.LK1wxsR9D0pF3RcDGG7Hai56JHSalAi', 'secretary');
+
 
 CREATE TABLE places (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -82,7 +83,7 @@ INSERT INTO places (row, spotNumber, hascharger) VALUES
 ('F', '08', TRUE),
 ('F', '09', TRUE),
 ('F', '10', TRUE);
-drop table reservations;
+
 create table reservations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     userId UUID NOT NULL,
@@ -90,10 +91,22 @@ create table reservations (
     needsCharger BOOLEAN NOT NULL,
     startDate DATE NOT NULL,
     endDate DATE NOT NULL,
+    statusReservation TEXT NOT NULL DEFAULT 'pending',
     statusChecked BOOLEAN NOT NULL DEFAULT FALSE,
     checkInTime TIMESTAMP WITH TIME ZONE,
     Foreign Key (userId) REFERENCES users(id),
     Foreign Key (spotId) REFERENCES places(id)
+);
+
+DROP TABLE reservationsPending;
+create table reservationsPending (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    userId UUID NOT NULL,
+    needsCharger BOOLEAN NOT NULL,
+    startDate DATE NOT NULL,
+    endDate DATE NOT NULL,
+    statusReservation TEXT NOT NULL DEFAULT 'pending',
+    Foreign Key (userId) REFERENCES users(id)
 );
 
 BEGIN;

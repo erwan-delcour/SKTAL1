@@ -4,14 +4,19 @@ import {
     getReservationById,
     getReservationsByUser,
     createReservation,
-    checkedInReservation
+    checkedInReservation,
+    requestReservation,
+    getPendingReservations
+    
 } from "../controllers/reservationController";
 
 const router = Router();
 
-router.get("/", getReservations);
+router.get("/:id", getReservations);
 router.get("/:id", getReservationById);
 router.get("/user/:userId", getReservationsByUser);
+router.get("/pending/list", getPendingReservations);
 router.post("/checkin/:spotId", checkedInReservation);
-router.post("/", createReservation);
+router.post("/create", createReservation);
+router.post("/request", requestReservation);
 export default router;

@@ -1,25 +1,70 @@
-import { getReservationsFromDB, cancelReservationInDB, createReservationInDB, updateReservationInDB, getReservationByIdFromDB, getReservationsByUserFromDB, checkedInReservationInDB, getReservationIdFromTodayBySpotid, checkReservation } from "../models/reservationModel";
+import { getReservationsFromDB, cancelReservationInDB, createReservationInDB, updateReservationInDB, getReservationByIdFromDB, getReservationsByUserFromDB, checkedInReservationInDB, getReservationIdFromTodayBySpotid, checkReservation, refuseReservationInDB, createPendingReservationInDB, getPendingReservationsFromDB } from "../models/reservationModel";
 import { getUserById } from "../models/userModel";
 import { Request, Response } from "express";
 
 
 export const getReservations = async (req: Request, res: Response) => {
+    const userId = req.body.userId as string;
     try {
+
+        const user = await getUserById(userId);
+        if (!user) {
+            res.status(403).json({ message: "User not found" });
+        }
+
+        if (!user.role || user.role !== "secretary") {
+            res.status(403).json({ message: "Access denied" });
+            return;
+        }
+
         const reservations = await getReservationsFromDB();
-        if (!reservations || reservations.length === 0) {
+
+        if (!reservations || reservations.length === 0) { 
             res.status(404).json({ message: "No reservations found" });
             return;
         }
+
         res.status(200).json(reservations);
-        return;
     } catch (error) {
         console.error("Error fetching reservations:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 };
 
+export const getPendingReservations = async (req: Request, res: Response) => {
+    const userId = req.body.userId as string;
+    console.log("getPendingReservations called with userId:", userId);
+    try {
+
+        const user = await getUserById(userId);
+        if (!user) {
+            res.status(403).json({ message: "User not found" });
+        }
+
+        if (!user.role || user.role !== "secretary") {
+            res.status(403).json({ message: "Access denied" });
+            return;
+        }
+
+        const reservations = await getPendingReservationsFromDB();
+
+        console.log("Pending reservations fetched:", reservations);
+
+    
+        if (!reservations || reservations.length === 0) { 
+            res.status(404).json({ message: "No reservations found" });
+            return;
+        }
+
+        res.status(200).json(reservations);
+    } catch (error) {
+        console.error("Error fetching all reservations:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 export const getReservationById = async (req: Request, res: Response) => {
-    const reservationId = req.params.id;
+    const reservationId = req.body.id;
     try {
         const reservation = await getReservationByIdFromDB(reservationId);
         if (!reservation) {
@@ -35,6 +80,10 @@ export const getReservationById = async (req: Request, res: Response) => {
 
 export const getReservationsByUser = async (req: Request, res: Response) => {
     const userId = req.params.userId;
+    if (!userId) {
+        res.status(400).json({ message: "User ID is required" });
+        return;
+    }
     try {
         await getUserById(userId);
         const reservations = await getReservationsByUserFromDB(userId);
@@ -62,8 +111,43 @@ export const cancelReservation = async (req: Request, res: Response) => {
     }
 };
 
+export const refuseReservation = async (req: Request, res: Response) => {
+    const reservationId = req.body.id;
+    const userId = req.body.userId as string;
+    if (!reservationId || !userId) {
+        res.status(400).json({ message: "Reservation ID and User ID are required" });
+        return;
+    }
+    try {
+
+        const user = await getUserById(userId);
+        if (!user) {
+            res.status(403).json({ message: "User not found" });
+        }
+
+        if (!user.role || user.role !== "secretary") {
+            res.status(403).json({ message: "Access denied need to be secretary" });
+            return;
+        }
+        
+        const reservation = await getReservationByIdFromDB(reservationId);
+        if (!reservation) {
+            res.status(404).json({ message: "Reservation not found" });
+            return;
+        }
+
+        await refuseReservationInDB(reservation.id);
+
+        res.status(200).json(reservation);
+    } catch (error) {
+        console.error("Error refusing reservation:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
 export const createReservation = async (req: Request, res: Response) => {
     const newReservation = req.body;
+    const spotId = req.body.pendingReservationId;
 
     try {
         const checkResult = await checkReservation(newReservation);
@@ -73,13 +157,38 @@ export const createReservation = async (req: Request, res: Response) => {
             return;
         }
 
-        const createdReservation = await createReservationInDB(newReservation);
+        const createdReservation = await createReservationInDB(newReservation, spotId);
         res.status(201).json(createdReservation);
     } catch (error) {
         console.error("Error creating reservation:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+
+export const requestReservation = async (req: Request, res: Response) => {
+    const newReservation = req.body;
+
+    if (!newReservation.userId || !newReservation.startDate || !newReservation.endDate) {
+        res.status(400).json({ message: "Missing required fields" });
+        return;
+    }
+
+    const user = await getUserById(newReservation.userId);
+    if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+    }
+
+    try {
+        const createdReservation = await createPendingReservationInDB(newReservation);
+        res.status(201).json(createdReservation);
+    } catch (error) {
+        console.error("Error creating reservation request:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
 
 export const checkedInReservation = async (req: Request, res: Response) => {
     const spotId = req.params.spotId;
@@ -113,4 +222,20 @@ export const patchReservation = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Internal server error" });
     }
 
+};
+
+
+export const getReservationBySpotId = async (req: Request, res: Response) => {
+    const spotId = req.params.spotId;
+    try {
+        const reservation = await getReservationIdFromTodayBySpotid(spotId);
+        if (!reservation) {
+            res.status(404).json({ message: "No reservation found for this spot today" });
+            return;
+        }
+        res.status(200).json(reservation);
+    } catch (error) {
+        console.error("Error fetching reservation by spot ID:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
 };
