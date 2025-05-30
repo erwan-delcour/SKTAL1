@@ -59,14 +59,14 @@ export function DashboardShell({ children, title, description, userRole }: Dashb
     })
   }
 
-  if (userRole === "Manager") {
-    routes.push({
-      label: "Analytics",
-      icon: LineChart,
-      href: `/dashboard/${userRole.toLowerCase()}/analytics`,
-      active: pathname === `/dashboard/${userRole.toLowerCase()}/analytics`,
-    })
-  }
+  // if (userRole === "Manager") {
+  //   routes.push({
+  //     label: "Analytics",
+  //     icon: LineChart,
+  //     href: `/dashboard/${userRole.toLowerCase()}/analytics`,
+  //     active: pathname === `/dashboard/${userRole.toLowerCase()}/analytics`,
+  //   })
+  // }
 
   return (
     <div className="flex min-h-screen flex-col">
