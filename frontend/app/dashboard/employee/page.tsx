@@ -1,38 +1,98 @@
 "use client"
 
-import {useState} from "react"
+import {useState, useEffect} from "react"
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
 import {CalendarDays, CheckCircle, History} from "lucide-react"
 import {DashboardShell} from "@/components/dashboard-shell";
-import {ReservationCalendar} from "@/components/reservation-calendar";
+import {ParkingReservationForm} from "@/components/parking-reservation-form";
 import {ReservationsList} from "@/components/reservations-list";
 import {ReservationHistory} from "@/components/reservation-history";
 import {CheckInForm} from "@/components/check-in-form";
-// Get today's date in the format "May 27, 2025"
-const getTodayFormatted = () => {
-    const today = new Date()
-    return today.toLocaleDateString("en-US", {month: "short", day: "numeric", year: "numeric"})
+import { getUserReservationsClient, type UserReservationsState } from "@/actions/user-reservations-action"
+
+// Types pour les réservations de l'API
+interface Reservation {
+  id: string
+  userId: string
+  startDate: string
+  endDate: string
+  needsCharger: boolean
+  statusChecked: boolean
+  checkInTime?: string
+  spot: {
+    id: string
+    row: string
+    spotNumber: number
+    hasCharger: boolean
+    isAvailable: boolean
+  }
+}
+
+// Fonctions utilitaires pour adapter les données API
+function formatReservationDate(startDate: string, endDate: string): string {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  const startFormatted = start.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  });
+  
+  if (startDate === endDate) {
+    return startFormatted;
+  } else {
+    const endFormatted = end.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+    return `${startFormatted} - ${endFormatted}`;
+  }
+}
+
+function getReservationSpot(reservation: Reservation): string {
+  if (reservation.spot) {
+    return `${reservation.spot.row}${reservation.spot.spotNumber}`;
+  }
+  return "Pending assignment";
+}
+
+function getReservationTime(startDate: string, endDate: string): string {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  
+  if (daysDiff === 1) {
+    return "Full day";
+  } else {
+    return `${daysDiff} days`;
+  }
 }
 
 export default function EmployeeDashboardPage() {
     const [activeTab, setActiveTab] = useState("reserve")
-    const [reservations, setReservations] = useState([
-        {
-            id: 1,
-            date: "May 27, 2025",
-            spot: "A03",
-            time: "Full day",
-            isElectric: true,
-        },
-        {
-            id: 2,
-            date: "May 28, 2025",
-            spot: "B07",
-            time: "Morning",
-            isElectric: false,
-        },
-    ])
+    
+    // État pour les vraies réservations depuis l'API
+    const [apiReservations, setApiReservations] = useState<Reservation[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [loadError, setLoadError] = useState<string | null>(null)
+    
+    // Transformer les données API vers le format attendu par ReservationsList
+    const transformedReservations = apiReservations.map(reservation => ({
+        id: parseInt(reservation.id),
+        date: formatReservationDate(reservation.startDate, reservation.endDate),
+        spot: getReservationSpot(reservation),
+        time: getReservationTime(reservation.startDate, reservation.endDate),
+        isElectric: reservation.needsCharger,
+    }))
+
+    // Get today's date in the format "May 27, 2025"
+    const getTodayFormatted = () => {
+        const today = new Date()
+        return today.toLocaleDateString("en-US", {month: "short", day: "numeric", year: "numeric"})
+    }
 
     const [history, setHistory] = useState<{
         id: number;
@@ -47,22 +107,50 @@ export default function EmployeeDashboardPage() {
         {id: 105, date: "May 14, 2025", spot: "F02", status: "Completed"},
     ])
 
-    const handleReservationCreated = (newReservation: {
-        id: number;
-        date: string;
-        spot: string;
-        time: string;
-        isElectric: boolean
-    }) => {
-        setReservations([...reservations, newReservation])
+    // Charger les réservations au montage du composant
+    useEffect(() => {
+        const loadReservations = async () => {
+            try {
+                setIsLoading(true)
+                setLoadError(null)
+                
+                const result = await getUserReservationsClient()
+                
+                if (result.success) {
+                    setApiReservations(result.reservations)
+                } else {
+                    setLoadError(result.error || "Failed to load reservations")
+                }
+            } catch (err) {
+                console.error("Failed to load reservations:", err)
+                setLoadError(err instanceof Error ? err.message : "Failed to load reservations")
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        loadReservations()
+    }, [])
+
+    const handleReservationCreated = async () => {
+        // Rafraîchir les réservations après création d'une nouvelle demande
+        console.log("Reservation request submitted successfully")
+        try {
+            const result = await getUserReservationsClient()
+            if (result.success) {
+                setApiReservations(result.reservations)
+            }
+        } catch (err) {
+            console.error("Failed to refresh reservations:", err)
+        }
     }
 
     const handleReservationCancelled = (reservationId: number) => {
         // Get the reservation before removing it
-        const cancelledReservation = reservations.find((res) => res.id === reservationId)
+        const cancelledReservation = transformedReservations.find((res) => res.id === reservationId)
 
-        // Remove from active reservations
-        setReservations(reservations.filter((res) => res.id !== reservationId))
+        // Remove from API reservations
+        setApiReservations(apiReservations.filter((res) => parseInt(res.id) !== reservationId))
 
         // Add to history as cancelled
         if (cancelledReservation) {
@@ -80,7 +168,7 @@ export default function EmployeeDashboardPage() {
 
     const handleCheckIn = (reservationId: number, spotId: any) => {
         // Find the reservation
-        const reservation = reservations.find((res) => res.id === reservationId)
+        const reservation = transformedReservations.find((res) => res.id === reservationId)
 
         if (reservation) {
             // If the reservation is for today, mark it as completed in history
@@ -100,7 +188,7 @@ export default function EmployeeDashboardPage() {
     }
 
     // Calculate stats for the dashboard
-    const activeReservationsCount = reservations.length
+    const activeReservationsCount = transformedReservations.length
     const availableTodayCount = 15 // This would come from an API in a real app
     const electricSpotsCount = 8 // This would come from an API in a real app
 
@@ -163,10 +251,10 @@ export default function EmployeeDashboardPage() {
                         <Card className="col-span-1">
                             <CardHeader>
                                 <CardTitle>Request a Reservation</CardTitle>
-                                <CardDescription>Select dates and parking area preferences</CardDescription>
+                                <CardDescription>Submit a parking reservation request for 1-5 days</CardDescription>
                             </CardHeader>
                             <CardContent className="pl-2">
-                                <ReservationCalendar onReservationCreated={handleReservationCreated}/>
+                                <ParkingReservationForm onReservationCreated={handleReservationCreated}/>
                             </CardContent>
                         </Card>
                         <Card className="col-span-1">
@@ -175,8 +263,18 @@ export default function EmployeeDashboardPage() {
                                 <CardDescription>View and manage your upcoming reservations</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <ReservationsList reservations={reservations}
-                                                  onReservationCancelled={handleReservationCancelled}/>
+                                {isLoading ? (
+                                    <div className="text-center py-4">
+                                        <p className="text-muted-foreground">Loading reservations...</p>
+                                    </div>
+                                ) : loadError ? (
+                                    <div className="text-center py-4">
+                                        <p className="text-red-500">Error: {loadError}</p>
+                                    </div>
+                                ) : (
+                                    <ReservationsList reservations={transformedReservations}
+                                                      onReservationCancelled={handleReservationCancelled}/>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
@@ -189,7 +287,7 @@ export default function EmployeeDashboardPage() {
                                 manually</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <CheckInForm reservations={reservations} onCheckIn={handleCheckIn}/>
+                            <CheckInForm reservations={transformedReservations} onCheckIn={handleCheckIn}/>
                         </CardContent>
                     </Card>
                 </TabsContent>

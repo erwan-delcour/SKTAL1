@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { getUserReservationsClient, type UserReservationsState } from "@/actions/user-reservations-action"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DashboardShell } from "@/components/dashboard-shell"
-import { ReservationCalendar } from "@/components/reservation-calendar"
+import { ParkingReservationForm } from "@/components/parking-reservation-form"
 import { useToast } from "@/hooks/useToast"
 import { Badge } from "@/components/ui/badge"
 import { CalendarIcon, Car, Filter, List, Plus, Search, Zap } from "lucide-react"
@@ -25,6 +26,112 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 
+// Types pour les réservations
+interface Reservation {
+  id: string
+  userId: string
+  startDate: string
+  endDate: string
+  needsCharger: boolean
+  statusChecked: boolean
+  checkInTime?: string
+  spot: {
+    id: string
+    row: string
+    spotNumber: number
+    hasCharger: boolean
+    isAvailable: boolean
+  }
+}
+
+// Fonctions utilitaires pour adapter les données API
+function formatReservationDate(startDate: string, endDate: string): string {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  const startFormatted = start.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  });
+  
+  if (startDate === endDate) {
+    return startFormatted;
+  } else {
+    const endFormatted = end.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+    return `${startFormatted} - ${endFormatted}`;
+  }
+}
+
+function getReservationSpot(reservation: Reservation): string {
+  if (reservation.spot) {
+    return `${reservation.spot.row}${reservation.spot.spotNumber}`;
+  }
+  return "Pending assignment";
+}
+
+function getReservationTime(startDate: string, endDate: string): string {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  
+  if (daysDiff === 1) {
+    return "Full day";
+  } else {
+    return `${daysDiff} days`;
+  }
+}
+
+function getReservationStatus(reservation: Reservation): string {
+  const today = new Date();
+  const startDate = new Date(reservation.startDate);
+  const endDate = new Date(reservation.endDate);
+  
+  today.setHours(0, 0, 0, 0);
+  startDate.setHours(0, 0, 0, 0);
+  endDate.setHours(0, 0, 0, 0);
+  
+  if (today >= startDate && today <= endDate) {
+    return reservation.statusChecked ? 'checked-in' : 'active';
+  } else if (today < startDate) {
+    return 'upcoming';
+  } else {
+    return 'completed';
+  }
+}
+
+// Function to check if a date has a reservation
+function hasReservationOnDate(reservations: Reservation[], targetDate: Date): boolean {
+  return reservations.some(reservation => {
+    const startDate = new Date(reservation.startDate);
+    const endDate = new Date(reservation.endDate);
+    
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+    targetDate.setHours(0, 0, 0, 0);
+    
+    return targetDate >= startDate && targetDate <= endDate;
+  });
+}
+
+// Function to get reservations for a specific date
+function getReservationsForDate(reservations: Reservation[], targetDate: Date): Reservation[] {
+  return reservations.filter(reservation => {
+    const startDate = new Date(reservation.startDate);
+    const endDate = new Date(reservation.endDate);
+    
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+    targetDate.setHours(0, 0, 0, 0);
+    
+    return targetDate >= startDate && targetDate <= endDate;
+  });
+}
+
 export default function EmployeeReservationsPage() {
   const { success, error } = useToast()
   const [date, setDate] = useState<Date | undefined>(new Date())
@@ -32,54 +139,48 @@ export default function EmployeeReservationsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined)
+  const [reservations, setReservations] = useState<Reservation[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
-  // Mock data for reservations
-  const [reservations, setReservations] = useState([
-    {
-      id: 1,
-      date: "May 27, 2025",
-      spot: "A03",
-      time: "Full day (8:00 AM - 6:00 PM)",
-      isElectric: true,
-      status: "upcoming",
-    },
-    {
-      id: 2,
-      date: "May 28, 2025",
-      spot: "B07",
-      time: "Morning (8:00 AM - 1:00 PM)",
-      isElectric: false,
-      status: "upcoming",
-    },
-    {
-      id: 3,
-      date: "May 29, 2025",
-      spot: "C04",
-      time: "Afternoon (1:00 PM - 6:00 PM)",
-      isElectric: false,
-      status: "upcoming",
-    },
-    {
-      id: 4,
-      date: "May 26, 2025",
-      spot: "F02",
-      time: "Full day (8:00 AM - 6:00 PM)",
-      isElectric: true,
-      status: "active",
-    },
-  ])
-  const handleReservationCreated = (newReservation: {
-    id: number
-    date: string
-    spot: string
-    time: string
-    isElectric: boolean
-  }) => {
-    setReservations([...reservations, { ...newReservation, status: "upcoming" }])
-    success(`Your parking spot ${newReservation.spot} has been reserved for ${newReservation.date}.`)
+  // Charger les réservations au montage du composant
+  useEffect(() => {
+    const loadReservations = async () => {
+      try {
+        setIsLoading(true)
+        setLoadError(null)
+        
+        const result = await getUserReservationsClient()
+        
+        if (result.success) {
+          setReservations(result.reservations)
+        } else {
+          setLoadError(result.error || "Failed to load reservations")
+        }
+      } catch (err) {
+        console.error("Failed to load reservations:", err)
+        setLoadError(err instanceof Error ? err.message : "Failed to load reservations")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadReservations()
+  }, [])
+  
+  const handleReservationCreated = async () => {
+    // Rafraîchir les réservations après création d'une nouvelle demande
+    try {
+      const result = await getUserReservationsClient()
+      if (result.success) {
+        setReservations(result.reservations)
+      }
+    } catch (err) {
+      console.error("Failed to refresh reservations:", err)
+    }
   }
 
-  const handleCancelReservation = (id: number) => {
+  const handleCancelReservation = (id: string) => {
     setReservations(reservations.filter((res) => res.id !== id))
     success("Your parking reservation has been successfully cancelled.")
   }
@@ -87,16 +188,26 @@ export default function EmployeeReservationsPage() {
   // Filter reservations based on search query, status, and date
   const filteredReservations = reservations.filter((reservation) => {
     // Filter by search query
+    const spot = getReservationSpot(reservation);
+    const dateText = formatReservationDate(reservation.startDate, reservation.endDate);
     const matchesSearch =
       searchQuery === "" ||
-      reservation.spot.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reservation.date.toLowerCase().includes(searchQuery.toLowerCase())
+      spot.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      dateText.toLowerCase().includes(searchQuery.toLowerCase())
 
     // Filter by status
-    const matchesStatus = statusFilter === "all" || reservation.status === statusFilter
+    const currentStatus = getReservationStatus(reservation);
+    const matchesStatus = statusFilter === "all" || currentStatus === statusFilter
 
-    // Filter by date
-    const matchesDate = !dateFilter || reservation.date === format(dateFilter, "MMM d, yyyy")
+    // Filter by date (check if the selected date falls within the reservation range)
+    const matchesDate = !dateFilter || (() => {
+      const filterDate = format(dateFilter, "MMM d, yyyy");
+      const startDate = new Date(reservation.startDate);
+      const endDate = new Date(reservation.endDate);
+      const selectedDate = new Date(dateFilter);
+      
+      return selectedDate >= startDate && selectedDate <= endDate;
+    })();
 
     return matchesSearch && matchesStatus && matchesDate
   })
@@ -187,12 +298,12 @@ export default function EmployeeReservationsPage() {
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Create New Reservation</DialogTitle>
-                <DialogDescription>Select a date and preferences for your parking reservation.</DialogDescription>
+                <DialogDescription>Select date range and options for your parking reservation request.</DialogDescription>
               </DialogHeader>
               <div className="py-4">
-                <ReservationCalendar
-                  onReservationCreated={(res) => {
-                    handleReservationCreated(res)
+                <ParkingReservationForm
+                  onReservationCreated={() => {
+                    handleReservationCreated()
                     // Close the dialog by clicking the close button
                     document
                       .querySelector("[data-dialog-close]")
@@ -216,7 +327,43 @@ export default function EmployeeReservationsPage() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="list" className="space-y-4">
-            {filteredReservations.length === 0 ? (
+            {isLoading ? (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                      <p className="text-muted-foreground">Loading your reservations...</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : loadError ? (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-center py-8">
+                    <p className="text-destructive mb-2">{loadError}</p>
+                    <div className="flex gap-2 justify-center">
+                      {loadError.includes("Authentication") || loadError.includes("login") ? (
+                        <Button 
+                          onClick={() => window.location.href = '/login'} 
+                          className="gap-2"
+                        >
+                          Go to Login
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={() => window.location.reload()} 
+                          variant="outline"
+                        >
+                          Try Again
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : filteredReservations.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-10 text-center">
                   <div className="rounded-full bg-muted p-3 mb-3">
@@ -240,13 +387,13 @@ export default function EmployeeReservationsPage() {
                         <DialogHeader>
                           <DialogTitle>Create New Reservation</DialogTitle>
                           <DialogDescription>
-                            Select a date and preferences for your parking reservation.
+                            Select date range and options for your parking reservation request.
                           </DialogDescription>
                         </DialogHeader>
                         <div className="py-4">
-                          <ReservationCalendar
-                            onReservationCreated={(res) => {
-                              handleReservationCreated(res)
+                          <ParkingReservationForm
+                            onReservationCreated={() => {
+                              handleReservationCreated()
                               // Close the dialog by clicking the close button
                               document
                                 .querySelector("[data-dialog-close]")
@@ -261,23 +408,30 @@ export default function EmployeeReservationsPage() {
               </Card>
             ) : (
               <div className="grid gap-4">
-                {filteredReservations.map((reservation) => (
-                  <Card key={reservation.id} className={cn(reservation.status === "active" && "border-primary")}>
+                {filteredReservations.map((reservation) => {
+                  const currentStatus = getReservationStatus(reservation);
+                  const spot = getReservationSpot(reservation);
+                  const dateText = formatReservationDate(reservation.startDate, reservation.endDate);
+                  const timeText = getReservationTime(reservation.startDate, reservation.endDate);
+                  const hasCharger = reservation.needsCharger || reservation.spot?.hasCharger;
+                  
+                  return (
+                  <Card key={reservation.id} className={cn(currentStatus === "active" && "border-primary")}>
                     <CardContent className="p-6">
                       <div className="flex flex-col sm:flex-row justify-between gap-4">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-lg">Spot {reservation.spot}</h3>
-                            {reservation.isElectric && <Zap className="h-4 w-4 text-yellow-500" />}
-                            <Badge variant={reservation.status === "active" ? "default" : "secondary"}>
-                              {reservation.status === "active" ? "Active Today" : "Upcoming"}
+                            <h3 className="font-semibold text-lg">Spot {spot}</h3>
+                            {hasCharger && <Zap className="h-4 w-4 text-yellow-500" />}
+                            <Badge variant={currentStatus === "active" ? "default" : "secondary"}>
+                              {currentStatus === "active" ? "Active Today" : currentStatus === "upcoming" ? "Upcoming" : "Completed"}
                             </Badge>
                           </div>
-                          <p className="text-muted-foreground">{reservation.date}</p>
-                          <p className="text-muted-foreground">{reservation.time}</p>
+                          <p className="text-muted-foreground">{dateText}</p>
+                          <p className="text-muted-foreground">{timeText}</p>
                         </div>
                         <div className="flex items-center gap-2 self-end sm:self-center">
-                          {reservation.status === "active" && (
+                          {currentStatus === "active" && (
                             <Button variant="outline" className="gap-2">
                               <CalendarIcon className="h-4 w-4" />
                               Check In
@@ -328,7 +482,8 @@ export default function EmployeeReservationsPage() {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  )
+                })}
               </div>
             )}
           </TabsContent>
@@ -352,8 +507,7 @@ export default function EmployeeReservationsPage() {
                     components={{
                       DayContent: (props) => {
                         // Check if there's a reservation on this day
-                        const dateString = format(props.date, "MMM d, yyyy")
-                        const hasReservation = reservations.some((r) => r.date === dateString)
+                        const hasReservation = hasReservationOnDate(reservations, props.date);
 
                         return (
                           <div className="relative h-full w-full p-2 flex items-center justify-center">
@@ -370,21 +524,25 @@ export default function EmployeeReservationsPage() {
                   {date && (
                     <div className="space-y-4">
                       <h3 className="font-medium">Reservations for {format(date, "MMMM d, yyyy")}</h3>
-                      {reservations.filter((r) => r.date === format(date, "MMM d, yyyy")).length > 0 ? (
+                      {getReservationsForDate(reservations, date).length > 0 ? (
                         <div className="space-y-2">
-                          {reservations
-                            .filter((r) => r.date === format(date, "MMM d, yyyy"))
-                            .map((reservation) => (
+                          {getReservationsForDate(reservations, date)
+                            .map((reservation) => {
+                              const spot = getReservationSpot(reservation);
+                              const timeText = getReservationTime(reservation.startDate, reservation.endDate);
+                              const hasCharger = reservation.needsCharger || reservation.spot?.hasCharger;
+                              
+                              return (
                               <div
                                 key={reservation.id}
                                 className="flex justify-between items-center p-3 border rounded-md"
                               >
                                 <div>
                                   <div className="flex items-center gap-2">
-                                    <span className="font-medium">Spot {reservation.spot}</span>
-                                    {reservation.isElectric && <Zap className="h-4 w-4 text-yellow-500" />}
+                                    <span className="font-medium">Spot {spot}</span>
+                                    {hasCharger && <Zap className="h-4 w-4 text-yellow-500" />}
                                   </div>
-                                  <p className="text-sm text-muted-foreground">{reservation.time}</p>
+                                  <p className="text-sm text-muted-foreground">{timeText}</p>
                                 </div>
                                 <Button
                                   variant="ghost"
@@ -395,7 +553,8 @@ export default function EmployeeReservationsPage() {
                                   Cancel
                                 </Button>
                               </div>
-                            ))}
+                              )
+                            })}
                         </div>
                       ) : (
                         <div className="text-center py-4 text-muted-foreground">No reservations for this date</div>

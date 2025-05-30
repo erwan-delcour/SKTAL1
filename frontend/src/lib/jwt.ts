@@ -3,7 +3,7 @@
  */
 export interface JWTPayload {
   role?: string;
-  userId?: string;
+  id?: string;      // Le backend utilise 'id' pour l'identifiant utilisateur
   login?: string;
   email?: string;
   exp?: number; // timestamp d'expiration
@@ -93,5 +93,6 @@ export function getRoleFromToken(token: string): string | null {
  */
 export function getUserIdFromToken(token: string): string | null {
   const payload = decodeTokenUnsafe(token);
-  return payload?.userId || null;
+  // Le backend utilise 'id' dans le token JWT
+  return payload?.id || null;
 }
