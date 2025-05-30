@@ -162,11 +162,13 @@ export async function getReservationsByUserFromDB(userId: string): Promise<{ con
 export async function deleteReservationInDB(reservationId: string, isPending: boolean): Promise<void> {
   let query;
   if( isPending) {
+    console.log('pending')
     query = `
         DELETE FROM reservationsPending
         WHERE id = $1
     `;
   } else {
+    console.log('not pending')
     query = `
         DELETE FROM reservations
         WHERE id = $1

@@ -1,6 +1,7 @@
 import { getReservationsFromDB, deleteReservationInDB, findAvailableSpot, createReservationInDB, updateReservationInDB, getReservationByIdFromDB, getReservationsByUserFromDB, checkedInReservationInDB, getReservationIdFromTodayBySpotid, checkReservation, refuseReservationInDB, createPendingReservationInDB, getPendingReservationsFromDB, getPendingReservationByIdFromDB } from "../models/reservationModel";
 import { getUserById } from "../models/userModel";
 import { Request, Response } from "express";
+import pool from "../db/dbConfig";
 
 
 export const getReservations = async (req: Request, res: Response) => {
@@ -90,19 +91,28 @@ export const getReservationsByUser = async (req: Request, res: Response) => {
 
 export const deleteReservation = async (req: Request, res: Response) => {
     const reservationId = req.params.id;
+    console.log(reservationId);
     let isPending = false;
     try {
-        let reservation: any = await getReservationByIdFromDB(reservationId);
-        if (!reservation) {
-           reservation = await getPendingReservationByIdFromDB(reservationId);
-            if (!reservation) {
+        const query = `
+            SELECT r.id, r.userId, r.needsCharger, r.startDate, r.endDate, r.statusChecked, r.checkInTime,
+                p.id as spot_id, p.isAvailable, p.hasCharger, p.row, p.spotNumber
+            FROM reservations r
+            JOIN places p ON r.spotId = p.id
+            WHERE r.id = $1
+        `;
+        let reservation: any = await pool.query(query, [reservationId])
+        if (!reservation || reservation.rows.length === 0) {
+            const queryPending = `SELECT * FROM reservationspending WHERE id = $1`
+            reservation = await pool.query(queryPending, [reservationId]);
+            if (!reservation || reservation.rows.length === 0) {
                 res.status(404).json({ message: "Reservation not found" });
                 return;
             }
             isPending = true;
         }
-
-        await deleteReservationInDB(reservation.id, isPending);
+        reservation = reservation.rows[0];
+        await deleteReservationInDB(reservationId, isPending);
         res.status(200).json(reservation);
     } catch (error) {
         console.error("Error deleting reservation:", error);
