@@ -273,10 +273,6 @@ export default function ManagerReservationsPage() {
                             <List className="h-4 w-4"/>
                             List View
                         </TabsTrigger>
-                        <TabsTrigger value="calendar" className="flex items-center gap-2">
-                            <CalendarIcon className="h-4 w-4"/>
-                            Calendar View
-                        </TabsTrigger>
                         <TabsTrigger value="map" className="flex items-center gap-2">
                             <Map className="h-4 w-4"/>
                             Parking Map
@@ -350,82 +346,6 @@ export default function ManagerReservationsPage() {
                             </div>
                         )}
                     </TabsContent>
-                    <TabsContent value="calendar" className="space-y-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Reservation Calendar</CardTitle>
-                                <CardDescription>View all reservations in a calendar format</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <Calendar
-                                        mode="single"
-                                        selected={selectedDateForCalendarView}
-                                        onSelect={setSelectedDateForCalendarView}
-                                        className="rounded-md border mx-auto"
-                                        classNames={{
-                                            day_today: "bg-primary/10 text-primary font-bold",
-                                            day_selected: "bg-primary text-primary-foreground",
-                                        }}
-                                        components={{
-                                            DayContent: (props) => {
-                                                const dateString = format(props.date, "MMM d, yyyy")
-                                                const reservationsOnDay = reservations.filter((r) => r.date === dateString)
-                                                return (
-                                                    <div
-                                                        className="relative h-full w-full p-2 flex items-center justify-center">
-                                                        <div>{props.date.getDate()}</div>
-                                                        {reservationsOnDay.length > 0 && (
-                                                            <div
-                                                                className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-auto px-1 h-4 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
-                                                                {reservationsOnDay.length}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )
-                                            },
-                                        }}
-                                    />
-                                    {selectedDateForCalendarView && (
-                                        <div className="space-y-4">
-                                            <h3 className="font-medium">
-                                                Reservations for {format(selectedDateForCalendarView, "MMMM d, yyyy")}
-                                            </h3>
-                                            {reservations.filter((r) => r.date === format(selectedDateForCalendarView, "MMM d, yyyy"))
-                                                .length > 0 ? (
-                                                <div className="space-y-2">
-                                                    {reservations
-                                                        .filter((r) => r.date === format(selectedDateForCalendarView, "MMM d, yyyy"))
-                                                        .map((reservation) => (
-                                                            <div
-                                                                key={reservation.id}
-                                                                className="flex justify-between items-center p-3 border rounded-md"
-                                                            >
-                                                                <div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span
-                                                                            className="font-medium">Spot {reservation.spot}</span>
-                                                                        <span
-                                                                            className="text-sm text-muted-foreground">({reservation.userName})</span>
-                                                                        {reservation.isElectric &&
-                                                                            <Zap className="h-4 w-4 text-yellow-500"/>}
-                                                                    </div>
-                                                                    <p className="text-sm text-muted-foreground">{reservation.time}</p>
-                                                                </div>
-                                                                {/* Cancel button removed for manager's view */}
-                                                            </div>
-                                                        ))}
-                                                </div>
-                                            ) : (
-                                                <div className="text-center py-4 text-muted-foreground">No reservations
-                                                    for this date</div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
                     <TabsContent value="map" className="space-y-4">
                         <Card>
                             <CardHeader>
@@ -433,7 +353,7 @@ export default function ManagerReservationsPage() {
                                 <CardDescription>Visual representation of parking lot status for today</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <ParkingMapOverview reservations={reservations} users={mockUsers}/>
+                                <ParkingMapOverview />
                             </CardContent>
                         </Card>
                     </TabsContent>

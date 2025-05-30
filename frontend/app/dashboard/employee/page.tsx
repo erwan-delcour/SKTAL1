@@ -12,6 +12,11 @@ import {ReservationHistory} from "@/components/reservation-history";
 import {CheckInForm} from "@/components/check-in-form";
 import { getUserReservationsClient, type UserReservationsState } from "@/actions/user-reservations-action"
 import { getTodayStatsClient, type StatsState } from "@/actions/stats-action"
+import { 
+  formatReservationDate, 
+  getReservationSpot, 
+  getReservationTime 
+} from "@/lib/reservation-utils"
 
 // Types pour les réservations de l'API
 interface Reservation {
@@ -28,48 +33,6 @@ interface Reservation {
     spotNumber: number
     hasCharger: boolean
     isAvailable: boolean
-  }
-}
-
-// Fonctions utilitaires pour adapter les données API
-function formatReservationDate(startDate: string, endDate: string): string {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  
-  const startFormatted = start.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
-  });
-  
-  if (startDate === endDate) {
-    return startFormatted;
-  } else {
-    const endFormatted = end.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
-    return `${startFormatted} - ${endFormatted}`;
-  }
-}
-
-function getReservationSpot(reservation: Reservation): string {
-  if (reservation.spot) {
-    return `${reservation.spot.row}${reservation.spot.spotNumber}`;
-  }
-  return "Pending assignment";
-}
-
-function getReservationTime(startDate: string, endDate: string): string {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  
-  if (daysDiff === 1) {
-    return "Full day";
-  } else {
-    return `${daysDiff} days`;
   }
 }
 
@@ -246,17 +209,7 @@ export default function EmployeeDashboardPage() {
     // Get today's date in the format "May 27, 2025"
     const getTodayFormatted = () => {
         const today = new Date()
-        return today.toLocaleDateString("en-US", {month: "short", day: "numeric", year: "numeric"})
-    }
-
-    const [history, setHistory] = useState<{
-        id: number;
-        date: string;
-        spot: string;
-        status: "Completed" | "No Show" | "Cancelled";
-    }[]>([
-        
-    ])
+        return today.toLocaleDateString("en-US", {month: "short", day: "numeric", year: "numeric"})    }
 
     // Charger les réservations au montage du composant
     useEffect(() => {
@@ -275,8 +228,7 @@ export default function EmployeeDashboardPage() {
                 
             } catch (err) {
                 console.error("Failed to load reservations:", err)
-                setLoadError(err instanceof Error ? err.message : "Failed to load reservations")
-            } finally {
+                setLoadError(err instanceof Error ? err.message : "Failed to load reservations")            } finally {
                 setIsLoading(false)
             }
         }
@@ -291,29 +243,15 @@ export default function EmployeeDashboardPage() {
             const result = await getUserReservationsClient()
             if (result.success) {
                 setApiReservations(result.reservations)
-            }        } catch (err) {
+            }
+        } catch (err) {
             console.error("Failed to refresh reservations:", err)
         }
     }
 
     const handleReservationCancelled = (reservationId: string) => {
-        // Get the reservation before removing it
-        const cancelledReservation = transformedReservations.find((res) => res.id === reservationId)
-
         // Remove from API reservations
         setApiReservations(apiReservations.filter((res) => res.id !== reservationId))
-
-        // Add to history as cancelled
-        if (cancelledReservation) {
-            setHistory([
-                {
-                    id: Date.now(),
-                    date: cancelledReservation.date,
-                    spot: cancelledReservation.spot,
-                    status: "Cancelled",
-                },                ...history,
-            ])
-        }
     }
 
     const handleCheckIn = (reservationId: string, spotId: any) => {
@@ -321,19 +259,8 @@ export default function EmployeeDashboardPage() {
         const reservation = transformedReservations.find((res) => res.id === reservationId)
 
         if (reservation) {
-            // If the reservation is for today, mark it as completed in history
-            if (reservation.date === getTodayFormatted()) {
-                // Add to history as completed
-                setHistory([
-                    {
-                        id: Date.now(),
-                        date: reservation.date,
-                        spot: reservation.spot,
-                        status: "Completed",
-                    },
-                    ...history,
-                ])
-            }
+            console.log(`Check-in completed for reservation ${reservationId} at spot ${spotId}`)
+            // Future: call API to update check-in status
         }
     }
 
@@ -409,15 +336,14 @@ export default function EmployeeDashboardPage() {
                             <CheckInForm reservations={transformedReservations} onCheckIn={handleCheckIn}/>
                         </CardContent>
                     </Card>
-                </TabsContent>
-                <TabsContent value="history" className="space-y-4">
+                </TabsContent>                <TabsContent value="history" className="space-y-4">
                     <Card>
                         <CardHeader>
                             <CardTitle>Reservation History</CardTitle>
                             <CardDescription>View your past parking reservations</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ReservationHistory history={history}/>
+                            <ReservationHistory />
                         </CardContent>
                     </Card>
                 </TabsContent>

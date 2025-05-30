@@ -86,13 +86,13 @@ export async function getAllPlacesStatusFromDB(): Promise<any[]> {
     for(const spot of spots.rows) {
         spot.isAvailable = true;
         spot.isReserved = false;
-        spot.isChecking = false;
+        spot.isCheckin = false;
         if (todayReservations.rows.some((reservation: any) => reservation.spotid === spot.id)) {
             spot.isAvailable = false;
             spot.isReserved = true;
             if (todayReservations.rows.some((reservation: any) => reservation.spotid === spot.id && reservation.statuschecked === true)) {
                 console.log("Spot is checked:", spot.id);
-                spot.isChecking = true;
+                spot.isCheckin = true;
             }
         }
     }

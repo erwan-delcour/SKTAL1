@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { getUserIdFromToken } from "@/lib/jwt";
 
-// Types pour les réservations
+// Types for reservations
 interface Reservation {
   id: string
   userId: string
@@ -30,13 +30,13 @@ export interface UserReservationsState {
 }
 
 /**
- * Server Action pour récupérer les réservations de l'utilisateur
+ * Server Action to retrieve user reservations
  */
 export async function getUserReservations(): Promise<UserReservationsState> {
   try {
-    // Vérification de l'authentification côté serveur
+    // Server-side authentication check
     const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;    if (!token) {
+    const token = cookieStore.get("token")?.value;if (!token) {
       return {
         reservations: [],
         confirmedReservations: [],
@@ -44,9 +44,7 @@ export async function getUserReservations(): Promise<UserReservationsState> {
         error: "Authentication required. Please login first.",
         success: false,
       };
-    }
-
-    // Extraction de l'userId en utilisant la fonction utilitaire
+    }    // Extract userId using utility function
     const userId = getUserIdFromToken(token);
       if (!userId) {
       return {
@@ -56,15 +54,15 @@ export async function getUserReservations(): Promise<UserReservationsState> {
         error: "Authentication expired or invalid. Please login again.",
         success: false,
       };
-    }
-
-    // Appel à l'API backend pour récupérer les réservations
+    }    // Call backend API to retrieve reservations
     const response = await fetch(`http://localhost:3001/api/reservations/user/${userId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-    });    // Gestion des erreurs HTTP
+    });
+
+    // Handle HTTP errors
     if (response.status === 401) {
       return {
         reservations: [],
@@ -73,10 +71,8 @@ export async function getUserReservations(): Promise<UserReservationsState> {
         error: "Authentication expired. Please login again.",
         success: false,
       };
-    }
-
-    if (response.status === 404) {
-      // Pas de réservations trouvées - ce n'est pas une erreur
+    }    if (response.status === 404) {
+      // No reservations found - this is not an error
       return {
         reservations: [],
         confirmedReservations: [],
@@ -92,15 +88,15 @@ export async function getUserReservations(): Promise<UserReservationsState> {
         pendingReservations: [],
         error: `Failed to fetch reservations (${response.status})`,
         success: false,
-      };
-    }    // Traitement de la réponse réussie
+      };    }
+
+    // Process successful response
     const data = await response.json();
     
-    // Extraire les réservations confirmées et en attente
+    // Extract confirmed and pending reservations
     const confirmedReservations = Array.isArray(data.confirmedReservations) ? data.confirmedReservations : [];
-    const pendingReservations = Array.isArray(data.pendingReservations) ? data.pendingReservations : [];
-    
-    // Combiner toutes les réservations pour la compatibilité
+    const pendingReservations = Array.isArray(data.pendingReservations) ? data.pendingReservations : [];    
+    // Combine all reservations for compatibility
     const allReservations = [...confirmedReservations, ...pendingReservations];
 
     return {
@@ -122,9 +118,55 @@ export async function getUserReservations(): Promise<UserReservationsState> {
 }
 
 /**
- * Fonction wrapper côté client pour appeler la server action
- * Peut être utilisée dans les useEffect et autres hooks côté client
+ * Client-side wrapper function to call the server action
+ * Can be used in useEffect and other client-side hooks
  */
 export async function getUserReservationsClient(): Promise<UserReservationsState> {
   return await getUserReservations();
+}
+
+/**
+ * Server Action to retrieve user's past reservation history
+ */
+export async function getUserReservationHistory(): Promise<UserReservationsState> {
+  try {
+    // Retrieve all reservations
+    const allReservationsResult = await getUserReservations();
+    
+    if (!allReservationsResult.success) {
+      return allReservationsResult;
+    }
+
+    // Filter to keep only past reservations
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of current day
+
+    const pastReservations = allReservationsResult.reservations.filter((reservation) => {
+      const endDate = new Date(reservation.endDate);
+      return endDate < today;
+    });
+
+    return {
+      reservations: pastReservations,
+      confirmedReservations: pastReservations.filter(r => allReservationsResult.confirmedReservations.some(c => c.id === r.id)),
+      pendingReservations: pastReservations.filter(r => allReservationsResult.pendingReservations.some(p => p.id === r.id)),
+      success: true,
+    };
+  } catch (error) {
+    console.error("Error fetching reservation history:", error);
+    return {
+      reservations: [],
+      confirmedReservations: [],
+      pendingReservations: [],
+      error: "Network error. Please check your connection and try again.",
+      success: false,
+    };
+  }
+}
+
+/**
+ * Client-side wrapper function to call the history server action
+ */
+export async function getUserReservationHistoryClient(): Promise<UserReservationsState> {
+  return await getUserReservationHistory();
 }

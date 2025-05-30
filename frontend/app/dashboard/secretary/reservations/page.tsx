@@ -753,12 +753,10 @@ export default function SecretaryReservationsPage() {
                     <TabsContent value="map" className="space-y-4">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Parking Map Overview</CardTitle>
-                                <CardDescription>Visual representation of parking lot status
-                                    (placeholder)</CardDescription>
+                                <CardTitle>Parking Map Overview</CardTitle>                                <CardDescription>Real-time view of parking lot status</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <ParkingMapOverview reservations={reservations} users={mockUsers as User[]}/>
+                                <ParkingMapOverview />
                             </CardContent>
                         </Card>
                     </TabsContent>

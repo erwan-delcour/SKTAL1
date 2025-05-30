@@ -11,6 +11,11 @@ import {OccupancyChart} from "@/components/occupancy-chart";
 import {ElectricUsageChart} from "@/components/electric-usage-chart";
 import { getManagerDashboardStats, ExtendedStatsState } from "@/actions/stats-action";
 import { getUserReservationsClient } from "@/actions/user-reservations-action";
+import { 
+  formatReservationDate, 
+  getReservationSpot, 
+  getReservationTime 
+} from "@/lib/reservation-utils"
 
 // Types pour les réservations de l'API
 interface Reservation {
@@ -26,50 +31,7 @@ interface Reservation {
     row: string
     spotNumber: number
     hasCharger: boolean
-    isAvailable: boolean
-  }
-}
-
-// Fonctions utilitaires pour adapter les données API
-function formatReservationDate(startDate: string, endDate: string): string {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  
-  const startFormatted = start.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
-  });
-  
-  if (startDate === endDate) {
-    return startFormatted;
-  } else {
-    const endFormatted = end.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
-    return `${startFormatted} - ${endFormatted}`;
-  }
-}
-
-function getReservationSpot(reservation: Reservation): string {
-  if (reservation.spot) {
-    return `${reservation.spot.row}${reservation.spot.spotNumber}`;
-  }
-  return "Pending assignment";
-}
-
-function getReservationTime(startDate: string, endDate: string): string {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  
-  if (daysDiff === 1) {
-    return "Full day";
-  } else {
-    return `${daysDiff} days`;
-  }
+    isAvailable: boolean  }
 }
 
 export default function ManagerDashboardPage() {
