@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { getUserReservationsClient, type UserReservationsState } from "@/actions/user-reservations-action"
+import { cancelUserReservation } from "@/actions/cancel-reservation-action"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -42,6 +43,7 @@ interface Reservation {
     hasCharger: boolean
     isAvailable: boolean
   }
+  statusReservation?: string
 }
 
 // Fonctions utilitaires pour adapter les données API
@@ -95,12 +97,16 @@ function getReservationStatus(reservation: Reservation): string {
   startDate.setHours(0, 0, 0, 0);
   endDate.setHours(0, 0, 0, 0);
   
+  // Si la réservation n'a pas de place assignée, statut "waiting"
+  if (!reservation.spot) {
+    return 'waiting';
+  }
   if (today >= startDate && today <= endDate) {
     return reservation.statusChecked ? 'checked-in' : 'active';
   } else if (today < startDate) {
     return 'upcoming';
   } else {
-    return 'completed';
+    return 'checked-in';
   }
 }
 
@@ -180,9 +186,14 @@ export default function EmployeeReservationsPage() {
     }
   }
 
-  const handleCancelReservation = (id: string) => {
-    setReservations(reservations.filter((res) => res.id !== id))
-    success("Your parking reservation has been successfully cancelled.")
+  const handleCancelReservation = async (id: string) => {
+    const result = await cancelUserReservation(id)
+    if (result.success) {
+      setReservations(reservations.filter((res) => res.id !== id))
+      success("Your parking reservation has been successfully cancelled.")
+    } else {
+      error(result.error || "Failed to cancel reservation. Please try again.")
+    }
   }
 
   // Filter reservations based on search query, status, and date
@@ -209,6 +220,10 @@ export default function EmployeeReservationsPage() {
       return selectedDate >= startDate && selectedDate <= endDate;
     })();
 
+    // Exclure les pendings acceptées
+    if (reservation.statusReservation === 'accepted' && getReservationStatus(reservation) === 'waiting') {
+      return false;
+    }
     return matchesSearch && matchesStatus && matchesDate
   })
 
@@ -423,8 +438,14 @@ export default function EmployeeReservationsPage() {
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold text-lg">Spot {spot}</h3>
                             {hasCharger && <Zap className="h-4 w-4 text-yellow-500" />}
-                            <Badge variant={currentStatus === "active" ? "default" : "secondary"}>
-                              {currentStatus === "active" ? "Active Today" : currentStatus === "upcoming" ? "Upcoming" : "Completed"}
+                            <Badge variant={currentStatus === "active" ? "default" : currentStatus === "waiting" ? "secondary" : currentStatus === "upcoming" ? "secondary" : "secondary"}>
+                              {currentStatus === "active"
+                                ? "Not checked-in"
+                                : currentStatus === "waiting"
+                                ? "Waiting"
+                                : currentStatus === "upcoming"
+                                ? "Upcoming"
+                                : "Checked-in"}
                             </Badge>
                           </div>
                           <p className="text-muted-foreground">{dateText}</p>
@@ -437,47 +458,49 @@ export default function EmployeeReservationsPage() {
                               Check In
                             </Button>
                           )}
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="destructive" className="gap-2">
-                                Cancel
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Cancel Reservation</DialogTitle>
-                                <DialogDescription>
-                                  Are you sure you want to cancel this parking reservation? This action cannot be
-                                  undone.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <DialogFooter className="mt-4">
-                                <Button
-                                  variant="outline"
-                                  onClick={() => {
-                                    // Close the dialog by clicking the close button
-                                    document
-                                      .querySelector("[data-dialog-close]")
-                                      ?.dispatchEvent(new MouseEvent("click", { bubbles: true }))
-                                  }}
-                                >
-                                  Keep Reservation
+                          {!reservation.statusChecked && (
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="destructive" className="gap-2">
+                                  Cancel
                                 </Button>
-                                <Button
-                                  variant="destructive"
-                                  onClick={() => {
-                                    handleCancelReservation(reservation.id)
-                                    // Close the dialog by clicking the close button
-                                    document
-                                      .querySelector("[data-dialog-close]")
-                                      ?.dispatchEvent(new MouseEvent("click", { bubbles: true }))
-                                  }}
-                                >
-                                  Yes, Cancel Reservation
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Cancel Reservation</DialogTitle>
+                                  <DialogDescription>
+                                    Are you sure you want to cancel this parking reservation? This action cannot be
+                                    undone.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <DialogFooter className="mt-4">
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                      // Close the dialog by clicking the close button
+                                      document
+                                        .querySelector("[data-dialog-close]")
+                                        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+                                    }}
+                                  >
+                                    Keep Reservation
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={() => {
+                                      handleCancelReservation(reservation.id)
+                                      // Close the dialog by clicking the close button
+                                      document
+                                        .querySelector("[data-dialog-close]")
+                                        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+                                    }}
+                                  >
+                                    Yes, Cancel Reservation
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -544,14 +567,16 @@ export default function EmployeeReservationsPage() {
                                   </div>
                                   <p className="text-sm text-muted-foreground">{timeText}</p>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-destructive hover:text-destructive"
-                                  onClick={() => handleCancelReservation(reservation.id)}
-                                >
-                                  Cancel
-                                </Button>
+                                {!reservation.statusChecked && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-destructive hover:text-destructive"
+                                    onClick={() => handleCancelReservation(reservation.id)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                )}
                               </div>
                               )
                             })}

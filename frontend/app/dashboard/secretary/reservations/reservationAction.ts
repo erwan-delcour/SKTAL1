@@ -6,7 +6,11 @@ export class ReservationAction {
         public type: string,
         public vehicle: string,
         public description: string,
-        public status: string
+        public status: string,
+        public startDate?: string,
+        public endDate?: string,
+        public spotNumber?: number,
+        public spotRow?: string
     ) {
     }
 
@@ -95,7 +99,11 @@ export class ReservationAction {
                 item.type || 'Employé',
                 item.vehicle || '',
                 item.description || '',
-                'pending'
+                'pending',
+                item.startDate,
+                item.endDate,
+                item.spot?.spotNumber || item.spotNumber,
+                item.spot?.row || item.spotRow
             ));
         } catch (e) {
             console.error("Erreur dans fetchPending:", e);

@@ -66,7 +66,7 @@ export async function getReservationIdFromTodayBySpotid(spotid: string): Promise
         throw new CustomError('No reservation found for today for this spot', 404);
       }
       const row = result.rows[0];
-      return row.id; // Return the reservation ID
+      return row.id;
     })
     .catch(error => {
       throw new CustomError(error.message, 500);
@@ -123,7 +123,7 @@ export async function getReservationsByUserFromDB(userId: string): Promise<{ con
   const pendingQuery = `
         SELECT *
         FROM reservationsPending
-        WHERE userId = $1
+        WHERE userId = $1 and statusReservation != 'accepted'
     `;
 
   const [confirmed, pending] = await Promise.all([

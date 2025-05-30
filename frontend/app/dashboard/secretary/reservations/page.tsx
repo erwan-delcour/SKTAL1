@@ -40,6 +40,8 @@ interface Reservation {
     isElectric: boolean;
     status: "upcoming" | "active" | "completed" | "cancelled";
     checkedIn: boolean;
+    startDate?: string;
+    endDate?: string;
 }
 
 interface User {
@@ -93,7 +95,7 @@ export default function SecretaryReservationsPage() {
     const [actionToEdit, setActionToEdit] = useState<ReservationAction | null>(null);
     const [acceptedRequests, setAcceptedRequests] = useState<number[]>([]);
 
-    const secretaryId = "20073cd6-43b4-4dd5-aa1e-a65fd14ca71a"; // exemple statique, à adapter
+    const secretaryId = "89ff44e9-de71-45e7-a689-483f4f9b1d0e"; // exemple statique, à adapter
 
     useEffect(() => {
         const refreshReservations = async () => {
@@ -111,6 +113,8 @@ export default function SecretaryReservationsPage() {
                 isElectric: r.isElectric,
                 status: r.status,
                 checkedIn: r.checkedIn,
+                startDate: r.startDate,
+                endDate: r.endDate,
             })));
         };
         refreshReservations();
@@ -135,6 +139,8 @@ export default function SecretaryReservationsPage() {
                 isElectric: r.isElectric,
                 status: r.status,
                 checkedIn: r.checkedIn,
+                startDate: r.startDate,
+                endDate: r.endDate,
             })));
         } catch (e) {
             success("Erreur lors de la création de la réservation.");
@@ -181,6 +187,8 @@ export default function SecretaryReservationsPage() {
                 isElectric: r.isElectric,
                 status: r.status,
                 checkedIn: r.checkedIn,
+                startDate: r.startDate,
+                endDate: r.endDate,
             })));
         } catch (e) {
             success("Erreur lors de l'annulation de la réservation.");
@@ -204,6 +212,8 @@ export default function SecretaryReservationsPage() {
                 isElectric: r.isElectric,
                 status: r.status,
                 checkedIn: r.checkedIn,
+                startDate: r.startDate,
+                endDate: r.endDate,
             })));
         } catch (e) {
             success("Erreur lors du check-in.");
@@ -231,6 +241,8 @@ export default function SecretaryReservationsPage() {
                 isElectric: r.isElectric,
                 status: r.status,
                 checkedIn: r.checkedIn,
+                startDate: r.startDate,
+                endDate: r.endDate,
             })));
             // Rafraîchir la liste des demandes en attente (pending)
             const pending = await ReservationAction.fetchPending(secretaryId);
@@ -252,8 +264,9 @@ export default function SecretaryReservationsPage() {
                 userName: r.userName,
                 userDepartment: r.userDepartment,
                 spot: r.spot,
-                date: r.date,
-                dateObj: new Date(r.date),
+                startDate: r.startDate || r.date,
+                endDate: r.endDate || r.date,
+                dateObj: new Date(r.startDate || r.date),
                 time: r.time,
                 isElectric: r.isElectric,
                 status: r.status,
@@ -267,8 +280,9 @@ export default function SecretaryReservationsPage() {
                 userName: '-',
                 userDepartment: '-',
                 spot: '-',
-                date: a.date,
-                dateObj: new Date(a.date),
+                startDate: a.startDate || a.date,
+                endDate: a.endDate || a.date,
+                dateObj: new Date(a.startDate || a.date),
                 time: a.time,
                 isElectric: false,
                 status: (a.status === 'accepted' ? 'accepted' : 'pending'),
@@ -276,6 +290,8 @@ export default function SecretaryReservationsPage() {
                 isRequest: a.status !== 'accepted',
                 vehicle: a.vehicle,
                 description: a.description,
+                spotRow: a.spotRow,
+                spotNumber: a.spotNumber,
             }))
         ];
         setAllReservations(merged);
@@ -293,7 +309,8 @@ export default function SecretaryReservationsPage() {
             searchQuery === "" ||
             reservation.spot.toLowerCase().includes(searchQuery.toLowerCase()) ||
             reservation.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            reservation.date.toLowerCase().includes(searchQuery.toLowerCase())
+            (reservation.startDate && reservation.startDate.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (reservation.endDate && reservation.endDate.toLowerCase().includes(searchQuery.toLowerCase()))
         const matchesStatus = statusFilter === "all" || reservation.status === statusFilter
         const matchesDate = !dateFilter || reservation.date === format(dateFilter, "MMM d, yyyy")
         const matchesUser = userFilter === "all" || reservation.userName === userFilter
@@ -485,8 +502,8 @@ export default function SecretaryReservationsPage() {
                                     className="grid grid-cols-1 md:grid-cols-7 gap-4 p-4 font-medium border-b bg-muted/50 text-sm">
                                     <div className="md:col-span-2">User</div>
                                     <div>Spot</div>
-                                    <div>Date</div>
-                                    <div>Time</div>
+                                    <div>Start Date</div>
+                                    <div>End Date</div>
                                     <div>Status</div>
                                     <div className="text-right">Actions</div>
                                 </div>
@@ -502,26 +519,26 @@ export default function SecretaryReservationsPage() {
                                                     className="text-xs text-muted-foreground">{reservation.userDepartment}</div>
                                             </div>
                                             <div className="flex items-center gap-1">
-                                                {typeof reservation.spot === 'object' && reservation.spot !== null
-                                                    ? (reservation.spot.spotNumber || reservation.spot.id || '-')
-                                                    : (reservation.spot || '-')}
+                                                {/* Affiche row et numéro de place si dispo */}
+                                                {reservation.spotRow || reservation.spot?.row || '-'}
+                                                {reservation.spotNumber || reservation.spot?.spotNumber ? ` ${reservation.spotNumber || reservation.spot?.spotNumber}` : ''}
                                                 {reservation.isElectric && <Zap className="h-4 w-4 text-yellow-500"/>}
                                             </div>
-                                            <div>{reservation.date}</div>
-                                            <div>{reservation.time && reservation.time.split ? reservation.time.split(" (", 1)[0] : reservation.time || ""}</div>
+                                            <div>{reservation.startDate ? reservation.startDate.split('T')[0] : '-'}</div>
+                                            <div>{reservation.endDate ? reservation.endDate.split('T')[0] : '-'}</div>
                                             <div>
                                                 <Badge
-                                                    variant={
-                                                        reservation.status === "active"
-                                                            ? "default"
-                                                            : reservation.status === "completed"
-                                                                ? "secondary"
-                                                                : reservation.status === "pending"
-                                                                    ? "destructive"
-                                                                    : reservation.status === "accepted"
-                                                                        ? "success"
-                                                                        : "outline"
-                                                    }
+                                                variant={
+                                                    reservation.status === "active"
+                                                        ? "default"
+                                                        : reservation.status === "completed"
+                                                            ? "secondary"
+                                                            : reservation.status === "pending"
+                                                                ? "destructive"
+                                                                : reservation.status === "accepted"
+                                                                    ? "secondary"
+                                                                    : "outline"
+                                                }
                                                 >
                                                     {reservation.status === "active"
                                                         ? "Active"
@@ -531,7 +548,7 @@ export default function SecretaryReservationsPage() {
                                                                 ? "Pending"
                                                                 : reservation.status === "accepted"
                                                                     ? "Accepted"
-                                                                    : "Upcoming"}
+                                                                    : "Accepted"}
                                                 </Badge>
                                             </div>
                                             <div className="flex justify-end gap-2">
