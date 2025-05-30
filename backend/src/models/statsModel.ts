@@ -78,7 +78,7 @@ export async function getAllPlacesStatusFromDB(): Promise<any[]> {
         throw new Error("No spots found");
     }
     const getTodayReservationQuery = `
-        SELECT spotId FROM reservations
+        SELECT spotId, statuschecked FROM reservations
         WHERE DATE(startDate) = CURRENT_DATE
     `;
     const todayReservations = await pool.query(getTodayReservationQuery);
@@ -86,12 +86,16 @@ export async function getAllPlacesStatusFromDB(): Promise<any[]> {
     for(const spot of spots.rows) {
         spot.isAvailable = true;
         spot.isReserved = false;
+        spot.isChecking = false;
         if (todayReservations.rows.some((reservation: any) => reservation.spotid === spot.id)) {
-            console.log("Spot is reserved:", spot.id);
             spot.isAvailable = false;
             spot.isReserved = true;
+            if (todayReservations.rows.some((reservation: any) => reservation.spotid === spot.id && reservation.statuschecked === true)) {
+                console.log("Spot is checked:", spot.id);
+                spot.isChecking = true;
+            }
         }
     }
-    
+
     return spots.rows;
 }
