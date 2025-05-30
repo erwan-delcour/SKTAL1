@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { getUserIdFromToken } from "@/lib/jwt";
+import { getUserIdFromToken, getRoleFromToken } from "@/lib/jwt";
 
 export interface ReservationFormState {
   message: string
@@ -28,10 +28,9 @@ export async function createParkingReservation(
       success: false,
     };
   }
-
-  if (numDays < 1 || numDays > 5) {
+  if (numDays < 1) {
     return {
-      message: "Please select between 1 and 5 days for your reservation.",
+      message: "Please select at least 1 day for your reservation.",
       success: false,
     };
   }
@@ -44,6 +43,18 @@ export async function createParkingReservation(
     if (!token) {
       return {
         message: "Authentication required. Please login first.",
+        success: false,
+      };
+    }
+
+    // Déterminer la limite de jours basée sur le rôle de l'utilisateur
+    const userRole = getRoleFromToken(token);
+    const maxDays = userRole === "manager" ? 30 : 5;
+    
+    if (numDays > maxDays) {
+      const roleText = userRole === "manager" ? "manager" : "employee";
+      return {
+        message: `As a ${roleText}, you can reserve parking for up to ${maxDays} days maximum.`,
         success: false,
       };
     }

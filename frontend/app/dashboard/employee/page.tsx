@@ -255,11 +255,7 @@ export default function EmployeeDashboardPage() {
         spot: string;
         status: "Completed" | "No Show" | "Cancelled";
     }[]>([
-        {id: 101, date: "May 20, 2025", spot: "C05", status: "Completed"},
-        {id: 102, date: "May 19, 2025", spot: "B03", status: "Completed"},
-        {id: 103, date: "May 18, 2025", spot: "A01", status: "Completed"},
-        {id: 104, date: "May 15, 2025", spot: "D07", status: "No Show"},
-        {id: 105, date: "May 14, 2025", spot: "F02", status: "Completed"},
+        
     ])
 
     // Charger les réservations au montage du composant

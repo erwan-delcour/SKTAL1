@@ -6,16 +6,16 @@ import { Calendar } from "@/components/ui/calendar"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Zap, RotateCcw } from "lucide-react"
+import { Zap, RotateCcw, Crown } from "lucide-react"
 import { useToast } from "@/hooks/useToast"
 import { createParkingReservation, type ReservationFormState } from "@/actions/parking-reservations-action"
 import type { DateRange } from "react-day-picker"
 
-interface ParkingReservationFormProps {
+interface ManagerParkingReservationFormProps {
   onReservationCreated?: () => void
 }
 
-export function ParkingReservationForm({ onReservationCreated }: ParkingReservationFormProps) {
+export function ManagerParkingReservationForm({ onReservationCreated }: ManagerParkingReservationFormProps) {
   const { success, error } = useToast()
   
   // Fonction pour formater la date sans problème de fuseau horaire
@@ -25,10 +25,12 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
   }
+  
   // États du formulaire
   const today = new Date()
   const [selectedDateRange, setSelectedDateRange] = useState<DateRange | undefined>({from: undefined, to: undefined})
   const [needsCharging, setNeedsCharging] = useState(false)
+  
   // Calculer le nombre de jours automatiquement
   const numDays = selectedDateRange?.from && selectedDateRange?.to 
     ? (() => {
@@ -91,8 +93,9 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
   const isDateDisabled = (date: Date) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-      const maxDate = new Date()
-    maxDate.setDate(maxDate.getDate() + 5)
+    // Limite de 30 jours pour les managers
+    const maxDate = new Date()
+    maxDate.setDate(maxDate.getDate() + 30)
     maxDate.setHours(23, 59, 59, 999)
     
     return date < today || date > maxDate
@@ -143,13 +146,13 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
       const diffTime = toDate.getTime() - fromDate.getTime()
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1
       
-      // Limiter à 5 jours maximum
-      if (diffDays <= 5) {
+      // Limiter à 30 jours maximum pour les managers
+      if (diffDays <= 30) {
         setSelectedDateRange(range)
       } else {
-        // Si plus de 5 jours, limiter à 5 jours à partir de from
+        // Si plus de 30 jours, limiter à 30 jours à partir de from
         const newTo = new Date(range.from)
-        newTo.setDate(newTo.getDate() + 4)
+        newTo.setDate(newTo.getDate() + 29)
         setSelectedDateRange({from: range.from, to: newTo})
       }
     } else {
@@ -171,7 +174,7 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
       : formatDateForAPI(selectedDateRange.from)
 
     // Debug: Afficher les données qui vont être envoyées
-    console.log("Form submission data:", {
+    console.log("Manager form submission data:", {
       startDate,
       endDate,
       numDays,
@@ -191,7 +194,8 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
   }
 
   return (
-    <form action={submitAction} onSubmit={handleSubmit} className="space-y-6">      {/* Hidden inputs for form data */}
+    <form action={submitAction} onSubmit={handleSubmit} className="space-y-6">
+      {/* Hidden inputs for form data */}
       <input 
         type="hidden" 
         name="startDate" 
@@ -212,6 +216,17 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
         name="needsCharging" 
         value={needsCharging.toString()} 
       />
+      
+      {/* Message pour les managers */}
+      <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+        <div className="flex items-center gap-2 text-blue-700">
+          <Crown className="h-4 w-4" />
+          <span className="text-sm font-medium">Manager Privileges</span>
+        </div>
+        <p className="text-xs text-blue-600 mt-1">
+          As a manager, you can reserve parking spots for up to 30 days in advance.
+        </p>
+      </div>
       
       {/* Sélection de date */}
       <div className="space-y-2">
@@ -239,7 +254,8 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
               <RotateCcw className="h-4 w-4" />
               Reset Calendar
             </Button>
-          </div>        )}
+          </div>
+        )}
         
         {!selectedDateRange?.from && (
           <p className="text-sm text-center text-muted-foreground">

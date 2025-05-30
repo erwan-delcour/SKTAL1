@@ -123,7 +123,7 @@ export async function getReservationsByUserFromDB(userId: string): Promise<{ con
   const pendingQuery = `
         SELECT *
         FROM reservationsPending
-        WHERE userId = $1
+        WHERE userId = $1 AND statusReservation = 'pending'
     `;
 
   const [confirmed, pending] = await Promise.all([

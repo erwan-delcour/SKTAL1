@@ -95,7 +95,6 @@ export async function getUserReservations(): Promise<UserReservationsState> {
       };
     }    // Traitement de la réponse réussie
     const data = await response.json();
-    console.log("Fetched Reservations:", data);
     
     // Extraire les réservations confirmées et en attente
     const confirmedReservations = Array.isArray(data.confirmedReservations) ? data.confirmedReservations : [];
