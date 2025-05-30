@@ -3,6 +3,7 @@
 import {useState, useEffect} from "react"
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
+import {Skeleton} from "@/components/ui/skeleton"
 import {CalendarDays, CheckCircle, History} from "lucide-react"
 import {DashboardShell} from "@/components/dashboard-shell";
 import {ParkingReservationForm} from "@/components/parking-reservation-form";
@@ -10,6 +11,7 @@ import {ReservationsList} from "@/components/reservations-list";
 import {ReservationHistory} from "@/components/reservation-history";
 import {CheckInForm} from "@/components/check-in-form";
 import { getUserReservationsClient, type UserReservationsState } from "@/actions/user-reservations-action"
+import { getTodayStatsClient, type StatsState } from "@/actions/stats-action"
 
 // Types pour les réservations de l'API
 interface Reservation {
@@ -71,6 +73,161 @@ function getReservationTime(startDate: string, endDate: string): string {
   }
 }
 
+// Composants pour les statistiques avec Suspense
+function ActiveReservationsCard({ reservationsCount }: { reservationsCount: number }) {
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Reservations</CardTitle>
+                <CalendarDays className="h-4 w-4 text-muted-foreground"/>
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{reservationsCount}</div>
+                <p className="text-xs text-muted-foreground">
+                    You have {reservationsCount} upcoming
+                    reservation{reservationsCount !== 1 ? "s" : ""}
+                </p>
+            </CardContent>
+        </Card>
+    );
+}
+
+function ActiveReservationsSkeleton() {
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-4" />
+            </CardHeader>
+            <CardContent>
+                <Skeleton className="h-8 w-8 mb-2" />
+                <Skeleton className="h-3 w-40" />
+            </CardContent>
+        </Card>
+    );
+}
+
+function TodayStatsCards({ availableToday, electricSpots }: { availableToday: number; electricSpots: number }) {
+    return (
+        <>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Available Today</CardTitle>
+                    <CalendarDays className="h-4 w-4 text-muted-foreground"/>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{availableToday}</div>
+                    <p className="text-xs text-muted-foreground">
+                        {availableToday} spots available for today
+                    </p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Electric Spots</CardTitle>
+                    <CalendarDays className="h-4 w-4 text-muted-foreground"/>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{electricSpots}</div>
+                    <p className="text-xs text-muted-foreground">
+                        {electricSpots} electric charging spots available
+                    </p>
+                </CardContent>
+            </Card>
+        </>
+    );
+}
+
+function TodayStatsSkeleton() {
+    return (
+        <>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-4 w-4" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-8 w-8 mb-2" />
+                    <Skeleton className="h-3 w-36" />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-4" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-8 w-8 mb-2" />
+                    <Skeleton className="h-3 w-44" />
+                </CardContent>
+            </Card>
+        </>
+    );
+}
+
+function TodayStatsContainer() {
+    const [stats, setStats] = useState<{ availableToday: number; electricSpots: number } | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const loadStats = async () => {
+            try {
+                const statsResult = await getTodayStatsClient();
+                if (statsResult.success) {
+                    setStats({
+                        availableToday: statsResult.availableToday,
+                        electricSpots: statsResult.electricSpots
+                    });
+                } else {
+                    setError(statsResult.error || "Failed to load stats");
+                }
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Failed to load stats");
+            }
+        };
+
+        loadStats();
+    }, []);
+
+    if (error) {
+        return (
+            <>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Available Today</CardTitle>
+                        <CalendarDays className="h-4 w-4 text-muted-foreground"/>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">--</div>
+                        <p className="text-xs text-red-500">Error loading data</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Electric Spots</CardTitle>
+                        <CalendarDays className="h-4 w-4 text-muted-foreground"/>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">--</div>
+                        <p className="text-xs text-red-500">Error loading data</p>
+                    </CardContent>
+                </Card>
+            </>
+        );
+    }
+
+    if (!stats) {
+        return <TodayStatsSkeleton />;
+    }
+    
+    return (
+        <TodayStatsCards 
+            availableToday={stats.availableToday} 
+            electricSpots={stats.electricSpots} 
+        />
+    );
+}
+
 export default function EmployeeDashboardPage() {
     const [activeTab, setActiveTab] = useState("reserve")
     
@@ -121,6 +278,7 @@ export default function EmployeeDashboardPage() {
                 } else {
                     setLoadError(result.error || "Failed to load reservations")
                 }
+                
             } catch (err) {
                 console.error("Failed to load reservations:", err)
                 setLoadError(err instanceof Error ? err.message : "Failed to load reservations")
@@ -189,8 +347,6 @@ export default function EmployeeDashboardPage() {
 
     // Calculate stats for the dashboard
     const activeReservationsCount = transformedReservations.length
-    const availableTodayCount = 15 // This would come from an API in a real app
-    const electricSpotsCount = 8 // This would come from an API in a real app
 
     return (
         <DashboardShell title="Employee Dashboard" description="Manage your parking reservations" userRole="Employee">
@@ -211,41 +367,12 @@ export default function EmployeeDashboardPage() {
                 </TabsList>
                 <TabsContent value="reserve" className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Active Reservations</CardTitle>
-                                <CalendarDays className="h-4 w-4 text-muted-foreground"/>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{activeReservationsCount}</div>
-                                <p className="text-xs text-muted-foreground">
-                                    You have {activeReservationsCount} upcoming
-                                    reservation{activeReservationsCount !== 1 ? "s" : ""}
-                                </p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Available Today</CardTitle>
-                                <CalendarDays className="h-4 w-4 text-muted-foreground"/>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{availableTodayCount}</div>
-                                <p className="text-xs text-muted-foreground">{availableTodayCount} spots available for
-                                    today</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Electric Spots</CardTitle>
-                                <CalendarDays className="h-4 w-4 text-muted-foreground"/>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{electricSpotsCount}</div>
-                                <p className="text-xs text-muted-foreground">{electricSpotsCount} electric charging
-                                    spots available</p>
-                            </CardContent>
-                        </Card>
+                        {isLoading ? (
+                            <ActiveReservationsSkeleton />
+                        ) : (
+                            <ActiveReservationsCard reservationsCount={activeReservationsCount} />
+                        )}
+                        <TodayStatsContainer />
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                         <Card className="col-span-1">

@@ -24,7 +24,13 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
   
   // Calculer le nombre de jours automatiquement
   const numDays = selectedDateRange?.from && selectedDateRange?.to 
-    ? Math.ceil(Math.abs(selectedDateRange.to.getTime() - selectedDateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    ? (() => {
+        // Normaliser les dates pour ignorer les heures
+        const fromDate = new Date(selectedDateRange.from.getFullYear(), selectedDateRange.from.getMonth(), selectedDateRange.from.getDate())
+        const toDate = new Date(selectedDateRange.to.getFullYear(), selectedDateRange.to.getMonth(), selectedDateRange.to.getDate())
+        const diffTime = toDate.getTime() - fromDate.getTime()
+        return Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1
+      })()
     : 1
   
   // Action state pour la soumission
@@ -67,7 +73,7 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
 
   const formatDateForDisplay = (date: Date | undefined) => {
     if (!date) return ""
-    const month = date.toLocaleString("default", { month: "short" })
+    const month = date.toLocaleString("en-US", { month: "short" })
     const day = date.getDate()
     const year = date.getFullYear()
     return `${month} ${day}, ${year}`
@@ -88,9 +94,11 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
     if (!range) return
     
     if (range.from && range.to) {
-      // Calculer le nombre de jours entre from et to
-      const diffTime = Math.abs(range.to.getTime() - range.from.getTime())
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
+      // Calculer le nombre de jours entre from et to en normalisant les dates
+      const fromDate = new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate())
+      const toDate = new Date(range.to.getFullYear(), range.to.getMonth(), range.to.getDate())
+      const diffTime = toDate.getTime() - fromDate.getTime()
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1
       
       // Limiter à 5 jours maximum
       if (diffDays <= 5) {
@@ -191,7 +199,7 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
         )}
         {selectedDateRange?.from && !selectedDateRange?.to && (
           <p className="text-sm text-center text-muted-foreground">
-            Select an end date (max 5 days from start date)
+            1 day selected: {formatDateForDisplay(selectedDateRange.from)} (or select an end date for multi-day reservation)
           </p>
         )}
       </div>
