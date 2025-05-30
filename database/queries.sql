@@ -82,7 +82,7 @@ INSERT INTO places (row, spotNumber, hascharger) VALUES
 ('F', '08', TRUE),
 ('F', '09', TRUE),
 ('F', '10', TRUE);
-drop table reservations;
+
 create table reservations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     userId UUID NOT NULL,

@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  db:
+    build: ./database
+    container_name: postgres-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: archi
+      POSTGRES_PASSWORD: archi
+      POSTGRES_DB: db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: backend-api
+    depends_on:
+      - db
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    working_dir: /app
+    command: npm run dev
+
+  frontend:
+    platform: linux/amd64
+    build:
+      context: ./frontend
+    container_name: frontend-app
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    working_dir: /app
+    command: npm run dev
+
+volumes:
+  pgdata:
