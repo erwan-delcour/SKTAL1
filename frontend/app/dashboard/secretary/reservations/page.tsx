@@ -27,6 +27,7 @@ import {Badge} from "@/components/ui/badge";
 import {ParkingMapOverview} from "@/components/parking-map-overview";
 import {Toaster} from "@/components/ui/sonner";
 import {ReservationAction} from "./reservationAction";
+import {getUserIdFromCookie} from "@/actions/user-reservations-action";
 
 // Types
 interface Reservation {
@@ -95,10 +96,16 @@ export default function SecretaryReservationsPage() {
     const [actionToEdit, setActionToEdit] = useState<ReservationAction | null>(null);
     const [acceptedRequests, setAcceptedRequests] = useState<number[]>([]);
 
-    const secretaryId = "89ff44e9-de71-45e7-a689-483f4f9b1d0e"; // exemple statique, à adapter
-
     useEffect(() => {
-        const refreshReservations = async () => {
+        const fetchAndRefreshReservations = async () => {
+            // Récupère l'userId (secrétaire) via l'action serveur sécurisée
+            const res = await getUserIdFromCookie();
+            if (!res.success || !res.userId) {
+                setReservationActions([]);
+                setReservations([]);
+                return;
+            }
+            const secretaryId = res.userId;
             const pending = await ReservationAction.fetchPending(secretaryId);
             setReservationActions(pending);
             const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
@@ -117,7 +124,7 @@ export default function SecretaryReservationsPage() {
                 endDate: r.endDate,
             })));
         };
-        refreshReservations();
+        fetchAndRefreshReservations();
     }, [secretaryId]);
 
     const handleCreateReservation = async (newReservationData: Omit<Reservation, "id" | "userName" | "userDepartment" | "status" | "checkedIn">) => {
@@ -127,21 +134,25 @@ export default function SecretaryReservationsPage() {
             success("Votre réservation a bien été créée.");
             setIsCreateDialogOpen(false);
             // Rafraîchir les données
-            const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
-            setReservations(confirmed.map((r: any) => ({
-                id: r.id,
-                userId: r.userId,
-                userName: r.userName,
-                userDepartment: r.userDepartment,
-                date: r.date,
-                spot: r.spot,
-                time: r.time,
-                isElectric: r.isElectric,
-                status: r.status,
-                checkedIn: r.checkedIn,
-                startDate: r.startDate,
-                endDate: r.endDate,
-            })));
+            const res = await getUserIdFromCookie();
+            if (res.success && res.userId) {
+                const secretaryId = res.userId;
+                const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
+                setReservations(confirmed.map((r: any) => ({
+                    id: r.id,
+                    userId: r.userId,
+                    userName: r.userName,
+                    userDepartment: r.userDepartment,
+                    date: r.date,
+                    spot: r.spot,
+                    time: r.time,
+                    isElectric: r.isElectric,
+                    status: r.status,
+                    checkedIn: r.checkedIn,
+                    startDate: r.startDate,
+                    endDate: r.endDate,
+                })));
+            }
         } catch (e) {
             success("Erreur lors de la création de la réservation.");
         }
@@ -175,21 +186,25 @@ export default function SecretaryReservationsPage() {
             }
             success("Votre réservation a bien été annulée.");
             // Rafraîchir les données
-            const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
-            setReservations(confirmed.map((r: any) => ({
-                id: r.id,
-                userId: r.userId,
-                userName: r.userName,
-                userDepartment: r.userDepartment,
-                date: r.date,
-                spot: r.spot,
-                time: r.time,
-                isElectric: r.isElectric,
-                status: r.status,
-                checkedIn: r.checkedIn,
-                startDate: r.startDate,
-                endDate: r.endDate,
-            })));
+            const res = await getUserIdFromCookie();
+            if (res.success && res.userId) {
+                const secretaryId = res.userId;
+                const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
+                setReservations(confirmed.map((r: any) => ({
+                    id: r.id,
+                    userId: r.userId,
+                    userName: r.userName,
+                    userDepartment: r.userDepartment,
+                    date: r.date,
+                    spot: r.spot,
+                    time: r.time,
+                    isElectric: r.isElectric,
+                    status: r.status,
+                    checkedIn: r.checkedIn,
+                    startDate: r.startDate,
+                    endDate: r.endDate,
+                })));
+            }
         } catch (e) {
             success("Erreur lors de l'annulation de la réservation.");
         }
@@ -200,21 +215,25 @@ export default function SecretaryReservationsPage() {
             await ReservationAction.checkIn(String(id));
             success("Check-in effectué avec succès.");
             // Rafraîchir les données
-            const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
-            setReservations(confirmed.map((r: any) => ({
-                id: r.id,
-                userId: r.userId,
-                userName: r.userName,
-                userDepartment: r.userDepartment,
-                date: r.date,
-                spot: r.spot,
-                time: r.time,
-                isElectric: r.isElectric,
-                status: r.status,
-                checkedIn: r.checkedIn,
-                startDate: r.startDate,
-                endDate: r.endDate,
-            })));
+            const res = await getUserIdFromCookie();
+            if (res.success && res.userId) {
+                const secretaryId = res.userId;
+                const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
+                setReservations(confirmed.map((r: any) => ({
+                    id: r.id,
+                    userId: r.userId,
+                    userName: r.userName,
+                    userDepartment: r.userDepartment,
+                    date: r.date,
+                    spot: r.spot,
+                    time: r.time,
+                    isElectric: r.isElectric,
+                    status: r.status,
+                    checkedIn: r.checkedIn,
+                    startDate: r.startDate,
+                    endDate: r.endDate,
+                })));
+            }
         } catch (e) {
             success("Erreur lors du check-in.");
         }
@@ -229,24 +248,28 @@ export default function SecretaryReservationsPage() {
 
         if (success) {
             // Rafraîchir la liste des réservations confirmées
-            const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
-            setReservations(confirmed.map((r: any) => ({
-                id: r.id,
-                userId: r.userId,
-                userName: r.userName,
-                userDepartment: r.userDepartment,
-                date: r.date,
-                spot: r.spot,
-                time: r.time,
-                isElectric: r.isElectric,
-                status: r.status,
-                checkedIn: r.checkedIn,
-                startDate: r.startDate,
-                endDate: r.endDate,
-            })));
-            // Rafraîchir la liste des demandes en attente (pending)
-            const pending = await ReservationAction.fetchPending(secretaryId);
-            setReservationActions(pending);
+            const res = await getUserIdFromCookie();
+            if (res.success && res.userId) {
+                const secretaryId = res.userId;
+                const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
+                setReservations(confirmed.map((r: any) => ({
+                    id: r.id,
+                    userId: r.userId,
+                    userName: r.userName,
+                    userDepartment: r.userDepartment,
+                    date: r.date,
+                    spot: r.spot,
+                    time: r.time,
+                    isElectric: r.isElectric,
+                    status: r.status,
+                    checkedIn: r.checkedIn,
+                    startDate: r.startDate,
+                    endDate: r.endDate,
+                })));
+                // Rafraîchir la liste des demandes en attente (pending)
+                const pending = await ReservationAction.fetchPending(secretaryId);
+                setReservationActions(pending);
+            }
         }
     };
 

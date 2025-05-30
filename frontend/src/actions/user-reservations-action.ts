@@ -30,7 +30,27 @@ export interface UserReservationsState {
 }
 
 /**
- * Server Action to retrieve user reservations
+ * Server Action pour récupérer l'userId (secrétaire ou autre) depuis le cookie JWT côté serveur
+ */
+export async function getUserIdFromCookie(): Promise<{ userId: string | null, success: boolean, error?: string }> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+    if (!token) {
+      return { userId: null, success: false, error: "Authentication required. Please login first." };
+    }
+    const userId = getUserIdFromToken(token);
+    if (!userId) {
+      return { userId: null, success: false, error: "Authentication expired or invalid. Please login again." };
+    }
+    return { userId, success: true };
+  } catch (error) {
+    return { userId: null, success: false, error: "Network error. Please check your connection and try again." };
+  }
+}
+
+/**
+ * Server Action pour récupérer les réservations de l'utilisateur
  */
 export async function getUserReservations(): Promise<UserReservationsState> {
   try {
