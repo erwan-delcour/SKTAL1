@@ -5,7 +5,7 @@ import pool from "../db/dbConfig";
 
 
 export const getReservations = async (req: Request, res: Response) => {
-    const userId = req.body.userId as string;
+    const userId = req.params.id as string;
     try {
 
         const user = await getUserById(userId);
@@ -160,7 +160,7 @@ export const refusePendingReservation = async (req: Request, res: Response) => {
 
 export const createReservation = async (req: Request, res: Response) => {
     const pendingReservationId = req.body.pendingReservationId;
-
+    console.log("Creating reservation for pending ID:", pendingReservationId);
     try {
         
         const pending = await getPendingReservationByIdFromDB(pendingReservationId);
@@ -276,3 +276,4 @@ export const getReservationBySpotId = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+

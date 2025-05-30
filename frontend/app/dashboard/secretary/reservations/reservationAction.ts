@@ -48,9 +48,8 @@ export class ReservationAction {
         try {
             console.log("Fetching all confirmed reservations for secretary:", secretaryId);
             const res = await fetch(`http://localhost:3001/api/reservations/${secretaryId}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({userId: secretaryId})
+                method: 'GET',
+                headers: {'Content-Type': 'application/json'}
             });
             if (!res.ok) {
                 return [];

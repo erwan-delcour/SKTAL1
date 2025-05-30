@@ -14,7 +14,7 @@ import {
 
 const router = Router();
 
-router.post("/:id", getReservations);
+router.get("/:id", getReservations);
 router.get("/:id", getReservationById);
 router.get("/user/:userId", getReservationsByUser);
 router.post("/pending/list", getPendingReservations);

@@ -212,8 +212,7 @@ export default function SecretaryReservationsPage() {
 
     const handleAcceptAction = async (actionId: string) => {
         const action = reservationActions.find(a => a.id === actionId);
-        console.log("Accepting action:", actionId);
-
+        console.log("Accepting action:", action);
 
         const success = await ReservationAction.acceptWithSpot(actionId)
         console.log("success:", success);
@@ -233,6 +232,9 @@ export default function SecretaryReservationsPage() {
                 status: r.status,
                 checkedIn: r.checkedIn,
             })));
+            // Rafraîchir la liste des demandes en attente (pending)
+            const pending = await ReservationAction.fetchPending(secretaryId);
+            setReservationActions(pending);
         }
     };
 
