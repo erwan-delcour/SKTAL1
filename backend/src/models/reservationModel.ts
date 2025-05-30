@@ -159,11 +159,19 @@ export async function getReservationsByUserFromDB(userId: string): Promise<{ con
   return { confirmedReservations, pendingReservations };
 }
 
-export async function deleteReservationInDB(reservationId: string): Promise<void> {
-  const query = `
+export async function deleteReservationInDB(reservationId: string, isPending: boolean): Promise<void> {
+  let query;
+  if( isPending) {
+    query = `
+        DELETE FROM reservationsPending
+        WHERE id = $1
+    `;
+  } else {
+    query = `
         DELETE FROM reservations
         WHERE id = $1
     `;
+  }
   return pool.query(query, [reservationId])
     .then(() => {
       console.log(`Reservation ${reservationId} deleted`);

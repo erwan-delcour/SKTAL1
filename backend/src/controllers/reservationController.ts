@@ -90,20 +90,19 @@ export const getReservationsByUser = async (req: Request, res: Response) => {
 
 export const deleteReservation = async (req: Request, res: Response) => {
     const reservationId = req.params.id;
+    let isPending = false;
     try {
-        const reservation = await getPendingReservationByIdFromDB(reservationId);
+        let reservation: any = await getReservationByIdFromDB(reservationId);
         if (!reservation) {
-            res.status(404).json({ message: "Reservation not found" });
-            return;
+           reservation = await getPendingReservationByIdFromDB(reservationId);
+            if (!reservation) {
+                res.status(404).json({ message: "Reservation not found" });
+                return;
+            }
+            isPending = true;
         }
 
-        if (!reservation.id) {
-            res.status(400).json({ message: "Reservation ID is missing" });
-            return;
-        }
-
-        await deleteReservationInDB(reservation.id);
-
+        await deleteReservationInDB(reservation.id, isPending);
         res.status(200).json(reservation);
     } catch (error) {
         console.error("Error deleting reservation:", error);

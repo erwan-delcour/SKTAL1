@@ -21,11 +21,6 @@ router.get("/pending/list", getPendingReservations);
 router.post("/checkin/:spotId", checkedInReservation);
 router.post("/create", createReservation);
 router.post("/request", requestReservation);
-<<<<<<< HEAD
-router.post("/refuse", refuseReservation);
-router.delete("/cancel/:id", cancelReservation);
-=======
 router.post("/refuse", refusePendingReservation);
-router.delete("/cancel", deleteReservation);
->>>>>>> origin/backRendu4
+router.delete("/cancel/:id", deleteReservation);
 export default router;
