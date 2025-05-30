@@ -6,7 +6,11 @@ export class ReservationAction {
         public type: string,
         public vehicle: string,
         public description: string,
-        public status: string
+        public status: string,
+        public startDate?: string,
+        public endDate?: string,
+        public spotNumber?: number,
+        public spotRow?: string
     ) {
     }
 

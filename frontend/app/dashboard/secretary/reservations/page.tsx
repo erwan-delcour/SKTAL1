@@ -97,7 +97,15 @@ export default function SecretaryReservationsPage() {
     const [acceptedRequests, setAcceptedRequests] = useState<number[]>([]);
 
     useEffect(() => {
-        const refreshReservations = async () => {
+        const fetchAndRefreshReservations = async () => {
+            // Récupère l'userId (secrétaire) via l'action serveur sécurisée
+            const res = await getUserIdFromCookie();
+            if (!res.success || !res.userId) {
+                setReservationActions([]);
+                setReservations([]);
+                return;
+            }
+            const secretaryId = res.userId;
             const pending = await ReservationAction.fetchPending(secretaryId);
             setReservationActions(pending);
             const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
@@ -112,8 +120,6 @@ export default function SecretaryReservationsPage() {
                 isElectric: r.isElectric,
                 status: r.status,
                 checkedIn: r.checkedIn,
-                startDate: r.startDate,
-                endDate: r.endDate,
             })));
         };
         fetchAndRefreshReservations();
@@ -141,6 +147,8 @@ export default function SecretaryReservationsPage() {
                     isElectric: r.isElectric,
                     status: r.status,
                     checkedIn: r.checkedIn,
+                    startDate: r.startDate,
+                    endDate: r.endDate,
                 })));
             }
         } catch (e) {
@@ -191,6 +199,8 @@ export default function SecretaryReservationsPage() {
                     isElectric: r.isElectric,
                     status: r.status,
                     checkedIn: r.checkedIn,
+                    startDate: r.startDate,
+                    endDate: r.endDate,
                 })));
             }
         } catch (e) {
@@ -218,6 +228,8 @@ export default function SecretaryReservationsPage() {
                     isElectric: r.isElectric,
                     status: r.status,
                     checkedIn: r.checkedIn,
+                    startDate: r.startDate,
+                    endDate: r.endDate,
                 })));
             }
         } catch (e) {
@@ -249,11 +261,14 @@ export default function SecretaryReservationsPage() {
                     isElectric: r.isElectric,
                     status: r.status,
                     checkedIn: r.checkedIn,
+                    startDate: r.startDate,
+                    endDate: r.endDate,
                 })));
                 // Rafraîchir la liste des demandes en attente (pending)
                 const pending = await ReservationAction.fetchPending(secretaryId);
                 setReservationActions(pending);
             }
+        }
     };
 
     // Filtrer les demandes à valider : uniquement celles des employés
@@ -314,7 +329,6 @@ export default function SecretaryReservationsPage() {
         const matchesSearch =
             searchQuery === "" ||
             reservation.spot.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            reservation.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (reservation.startDate && reservation.startDate.toLowerCase().includes(searchQuery.toLowerCase())) ||
             (reservation.endDate && reservation.endDate.toLowerCase().includes(searchQuery.toLowerCase()))
         const matchesStatus = statusFilter === "all" || reservation.status === statusFilter
@@ -534,17 +548,17 @@ export default function SecretaryReservationsPage() {
                                             <div>{reservation.endDate ? reservation.endDate.split('T')[0] : '-'}</div>
                                             <div>
                                                 <Badge
-                                                variant={
-                                                    reservation.status === "active"
-                                                        ? "default"
-                                                        : reservation.status === "completed"
-                                                            ? "secondary"
-                                                            : reservation.status === "pending"
-                                                                ? "destructive"
-                                                                : reservation.status === "accepted"
-                                                                    ? "secondary"
-                                                                    : "outline"
-                                                }
+                                                    variant={
+                                                        reservation.status === "active"
+                                                            ? "default"
+                                                            : reservation.status === "completed"
+                                                                ? "secondary"
+                                                                : reservation.status === "pending"
+                                                                    ? "destructive"
+                                                                    : reservation.status === "accepted"
+                                                                        ? "secondary"
+                                                                        : "outline"
+                                                    }
                                                 >
                                                     {reservation.status === "active"
                                                         ? "Active"
