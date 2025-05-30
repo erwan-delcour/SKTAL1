@@ -81,6 +81,7 @@ export async function getReservationByIdFromDB(reservationId: string): Promise<R
         JOIN places p ON r.spotId = p.id
         WHERE r.id = $1
     `;
+    console.log('Fetching reservation by ID:', reservationId);
   return pool.query(query, [reservationId])
     .then(result => {
       if (result.rows.length === 0) {
@@ -110,7 +111,7 @@ export async function getReservationByIdFromDB(reservationId: string): Promise<R
     });
 }
 
-export async function getReservationsByUserFromDB(userId: string): Promise<Reservation[]> {
+export async function getReservationsByUserFromDB(userId: string): Promise<{ confirmedReservations: Reservation[], pendingReservations: ReservationPending[] }> {
   const query = `
         SELECT r.id, r.userId, r.needsCharger, r.startDate, r.endDate, r.statusChecked, r.checkInTime,
                p.id as spot_id, p.isAvailable, p.hasCharger, p.row, p.spotNumber
@@ -129,6 +130,7 @@ export async function getReservationsByUserFromDB(userId: string): Promise<Reser
     pool.query(query, [userId]),
     pool.query(pendingQuery, [userId])
   ]);
+  
   const confirmedReservations = confirmed.rows.map(row => ({
     id: row.id,
     userId: row.userid,
@@ -143,23 +145,18 @@ export async function getReservationsByUserFromDB(userId: string): Promise<Reser
       hasCharger: row.hascharger,
       row: row.row,
       spotNumber: row.spotnumber
-    },
-    reservationType: row.reservationtype
-  }));
+    }
+  })) as Reservation[];
 
   const pendingReservations = pending.rows.map(row => ({
     id: row.id,
     userId: row.userid,
     needsCharger: row.needscharger,
     startDate: row.startdate,
-    endDate: row.enddate,
-    statusChecked: null,
-    checkInTime: null,
-    spot: null,
-    reservationType: row.reservationtype
-  }));
+    endDate: row.enddate
+  })) as ReservationPending[];
 
-  return confirmedReservations as Reservation[];
+  return { confirmedReservations, pendingReservations };
 }
 
 export async function cancelPendingReservationInDB(reservationId: string): Promise<void> {

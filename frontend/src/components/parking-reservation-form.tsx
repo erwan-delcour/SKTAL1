@@ -18,11 +18,18 @@ interface ParkingReservationFormProps {
 export function ParkingReservationForm({ onReservationCreated }: ParkingReservationFormProps) {
   const { success, error } = useToast()
   
-  // États du formulaire
-  const [selectedDateRange, setSelectedDateRange] = useState<DateRange | undefined>({from: new Date(), to: undefined})
+  // Fonction pour formater la date sans problème de fuseau horaire
+  const formatDateForAPI = (date: Date): string => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+    // États du formulaire
+  const today = new Date()
+  const [selectedDateRange, setSelectedDateRange] = useState<DateRange | undefined>({from: today, to: today})
   const [needsCharging, setNeedsCharging] = useState(false)
-  
-  // Calculer le nombre de jours automatiquement
+    // Calculer le nombre de jours automatiquement
   const numDays = selectedDateRange?.from && selectedDateRange?.to 
     ? (() => {
         // Normaliser les dates pour ignorer les heures
@@ -31,7 +38,9 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
         const diffTime = toDate.getTime() - fromDate.getTime()
         return Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1
       })()
-    : 1
+    : selectedDateRange?.from 
+      ? 1 // Si seulement from est défini, c'est 1 jour
+      : 1
   
   // Action state pour la soumission
   const [actionState, submitAction, isSubmitting] = useActionState(createParkingReservation, {
@@ -89,11 +98,13 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
     
     return date < today || date > maxDate
   }
-
   const handleDateRangeSelect = (range: DateRange | undefined) => {
     if (!range) return
     
-    if (range.from && range.to) {
+    if (range.from && !range.to) {
+      // Si seulement la date de début est sélectionnée, la considérer comme une réservation d'un jour
+      setSelectedDateRange({from: range.from, to: range.from})
+    } else if (range.from && range.to) {
       // Calculer le nombre de jours entre from et to en normalisant les dates
       const fromDate = new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate())
       const toDate = new Date(range.to.getFullYear(), range.to.getMonth(), range.to.getDate())
@@ -108,8 +119,7 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
         const newTo = new Date(range.from)
         newTo.setDate(newTo.getDate() + 4)
         setSelectedDateRange({from: range.from, to: newTo})
-      }
-    } else {
+      }    } else {
       setSelectedDateRange(range)
     }
   }
@@ -122,15 +132,23 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
       return
     }
 
+    const startDate = formatDateForAPI(selectedDateRange.from)
+    const endDate = selectedDateRange.to 
+      ? formatDateForAPI(selectedDateRange.to)
+      : formatDateForAPI(selectedDateRange.from)
+
+    // Debug: Afficher les données qui vont être envoyées
+    console.log("Form submission data:", {
+      startDate,
+      endDate,
+      numDays,
+      needsCharging,
+      selectedDateRange
+    })
+
     const formData = new FormData(event.currentTarget)
-    formData.append("startDate", selectedDateRange.from.toISOString().split('T')[0])
-    
-    if (selectedDateRange.to) {
-      formData.append("endDate", selectedDateRange.to.toISOString().split('T')[0])
-    } else {
-      formData.append("endDate", selectedDateRange.from.toISOString().split('T')[0])
-    }
-    
+    formData.append("startDate", startDate)
+    formData.append("endDate", endDate)
     formData.append("numDays", numDays.toString())
     formData.append("needsCharging", needsCharging.toString())
 
@@ -140,17 +158,16 @@ export function ParkingReservationForm({ onReservationCreated }: ParkingReservat
   }
 
   return (
-    <form action={submitAction} onSubmit={handleSubmit} className="space-y-6">
-      {/* Hidden inputs for form data */}
+    <form action={submitAction} onSubmit={handleSubmit} className="space-y-6">      {/* Hidden inputs for form data */}
       <input 
         type="hidden" 
         name="startDate" 
-        value={selectedDateRange?.from ? selectedDateRange.from.toISOString().split('T')[0] : ''} 
+        value={selectedDateRange?.from ? formatDateForAPI(selectedDateRange.from) : ''} 
       />
       <input 
         type="hidden" 
         name="endDate" 
-        value={selectedDateRange?.to ? selectedDateRange.to.toISOString().split('T')[0] : selectedDateRange?.from ? selectedDateRange.from.toISOString().split('T')[0] : ''} 
+        value={selectedDateRange?.to ? formatDateForAPI(selectedDateRange.to) : selectedDateRange?.from ? formatDateForAPI(selectedDateRange.from) : ''} 
       />
       <input 
         type="hidden" 

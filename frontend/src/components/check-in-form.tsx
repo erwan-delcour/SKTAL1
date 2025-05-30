@@ -10,13 +10,13 @@ import {useToast} from "@/hooks/useToast";
 
 interface CheckInFormProps {
   reservations: Array<{
-    id: number
+    id: string // Changé de number à string
     date: string
     spot: string
     time: string
     isElectric: boolean
   }>
-  onCheckIn: (reservationId: number, spotId: string) => void
+  onCheckIn: (reservationId: string, spotId: string) => void // Changé de number à string
 }
 
 export function CheckInForm({ reservations, onCheckIn }: CheckInFormProps) {

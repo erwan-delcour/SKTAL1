@@ -234,16 +234,14 @@ export default function EmployeeDashboardPage() {
     // État pour les vraies réservations depuis l'API
     const [apiReservations, setApiReservations] = useState<Reservation[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [loadError, setLoadError] = useState<string | null>(null)
-    
-    // Transformer les données API vers le format attendu par ReservationsList
-    const transformedReservations = apiReservations.map(reservation => ({
-        id: parseInt(reservation.id),
+    const [loadError, setLoadError] = useState<string | null>(null)    // Transformer les données API vers le format attendu par ReservationsList
+    const transformedReservations = Array.isArray(apiReservations) ? apiReservations.map(reservation => ({
+        id: reservation.id, // Garder l'UUID comme string
         date: formatReservationDate(reservation.startDate, reservation.endDate),
         spot: getReservationSpot(reservation),
         time: getReservationTime(reservation.startDate, reservation.endDate),
         isElectric: reservation.needsCharger,
-    }))
+    })) : []
 
     // Get today's date in the format "May 27, 2025"
     const getTodayFormatted = () => {
@@ -297,18 +295,17 @@ export default function EmployeeDashboardPage() {
             const result = await getUserReservationsClient()
             if (result.success) {
                 setApiReservations(result.reservations)
-            }
-        } catch (err) {
+            }        } catch (err) {
             console.error("Failed to refresh reservations:", err)
         }
     }
 
-    const handleReservationCancelled = (reservationId: number) => {
+    const handleReservationCancelled = (reservationId: string) => {
         // Get the reservation before removing it
         const cancelledReservation = transformedReservations.find((res) => res.id === reservationId)
 
         // Remove from API reservations
-        setApiReservations(apiReservations.filter((res) => parseInt(res.id) !== reservationId))
+        setApiReservations(apiReservations.filter((res) => res.id !== reservationId))
 
         // Add to history as cancelled
         if (cancelledReservation) {
@@ -318,13 +315,12 @@ export default function EmployeeDashboardPage() {
                     date: cancelledReservation.date,
                     spot: cancelledReservation.spot,
                     status: "Cancelled",
-                },
-                ...history,
+                },                ...history,
             ])
         }
     }
 
-    const handleCheckIn = (reservationId: number, spotId: any) => {
+    const handleCheckIn = (reservationId: string, spotId: any) => {
         // Find the reservation
         const reservation = transformedReservations.find((res) => res.id === reservationId)
 

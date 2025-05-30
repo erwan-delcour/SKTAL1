@@ -22,5 +22,5 @@ router.post("/checkin/:spotId", checkedInReservation);
 router.post("/create", createReservation);
 router.post("/request", requestReservation);
 router.post("/refuse", refuseReservation);
-router.delete("/cancel", cancelReservation);
+router.delete("/cancel/:id", cancelReservation);
 export default router;

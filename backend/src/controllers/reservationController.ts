@@ -91,7 +91,7 @@ export const getReservationsByUser = async (req: Request, res: Response) => {
 export const cancelReservation = async (req: Request, res: Response) => {
     const reservationId = req.params.id;
     try {
-        const reservation = await getReservationByIdFromDB(reservationId);
+        const reservation = await getPendingReservationByIdFromDB(reservationId);
         if (!reservation) {
             res.status(404).json({ message: "Reservation not found" });
             return;

@@ -12,9 +12,10 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import {useToast} from "@/hooks/useToast";
+import {cancelUserReservation} from "@/actions/cancel-reservation-action";
 
 interface Reservation {
-    id: number
+    id: string // Changé de number à string pour supporter les UUIDs
     date: string
     spot: string
     time: string
@@ -23,30 +24,47 @@ interface Reservation {
 
 interface ReservationsListProps {
     reservations: Reservation[]
-    onReservationCancelled: (id: number) => void
+    onReservationCancelled: (id: string) => void // Changé de number à string
 }
 
 export function ReservationsList({reservations, onReservationCancelled}: ReservationsListProps) {
-    const {success} = useToast()
+    const {success, error} = useToast()
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
-    const [reservationToCancel, setReservationToCancel] = useState<number | null>(null)
+    const [reservationToCancel, setReservationToCancel] = useState<string | null>(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
-    const handleCancelClick = (reservationId: number) => {
+    const handleCancelClick = (reservationId: string) => {
         setReservationToCancel(reservationId)
         setCancelDialogOpen(true)
     }
 
-    const confirmCancellation = () => {
-        if (reservationToCancel !== null) {
-            // In a real app, this would make an API call to cancel the reservation
-            onReservationCancelled(reservationToCancel)
-
-            // Show success toast
-            success("Your parking reservation has been successfully cancelled.")
-
-            // Close the dialog
-            setCancelDialogOpen(false)
-            setReservationToCancel(null)
+    const confirmCancellation = async () => {
+        if (reservationToCancel !== null && !isSubmitting) {
+            setIsSubmitting(true)
+            
+            try {
+                // Call the server action to cancel the reservation
+                const result = await cancelUserReservation(reservationToCancel)
+                
+                if (result.success) {
+                    // Update the parent component's state
+                    onReservationCancelled(reservationToCancel)
+                    
+                    // Show success toast
+                    success("Your parking reservation has been successfully cancelled.")
+                } else {
+                    // Show error toast
+                    error(result.error || "Failed to cancel reservation. Please try again.")
+                }
+            } catch (err) {
+                console.error("Error cancelling reservation:", err)
+                error("Network error. Please check your connection and try again.")
+            } finally {
+                setIsSubmitting(false)
+                // Close the dialog
+                setCancelDialogOpen(false)
+                setReservationToCancel(null)
+            }
         }
     }
 
@@ -93,13 +111,20 @@ export function ReservationsList({reservations, onReservationCancelled}: Reserva
                         <DialogDescription>
                             Are you sure you want to cancel this parking reservation? This action cannot be undone.
                         </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
+                    </DialogHeader>                    <DialogFooter>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setCancelDialogOpen(false)}
+                            disabled={isSubmitting}
+                        >
                             Keep Reservation
                         </Button>
-                        <Button variant="destructive" onClick={confirmCancellation}>
-                            Yes, Cancel Reservation
+                        <Button 
+                            variant="destructive" 
+                            onClick={confirmCancellation}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? "Cancelling..." : "Yes, Cancel Reservation"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
