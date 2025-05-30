@@ -50,11 +50,9 @@ interface User {
 }
 
 const mockUsers: User[] = [
-    {id: "user1", name: "John Doe", email: "john.doe@company.com", department: "Engineering"},
-    {id: "user2", name: "Alice Smith", email: "alice.smith@company.com", department: "Administration"},
-    {id: "user3", name: "Bob Johnson", email: "bob.johnson@company.com", department: "Marketing"},
-    {id: "user4", name: "Emma Wilson", email: "emma.wilson@company.com", department: "Finance"},
-    {id: "user5", name: "Mike Green", email: "mike.green@company.com", department: "Executive"},
+    {id: "e1270421-4f89-4394-be0e-f8b44b14b6c8", name: "John Doe", email: "john.doe@company.com", department: "Engineering"},
+    {id: "4d03f851-a89b-44b8-b830-fdf3766a4386", name: "Alice Smith", email: "alice.smith@company.com", department: "Administration"},
+    {id: "20073cd6-43b4-4dd5-aa1e-a65fd14ca71a", name: "Bob Johnson", email: "bob.johnson@company.com", department: "Marketing"}
 ]
 
 export default function SecretaryReservationsPage() {
@@ -80,13 +78,13 @@ export default function SecretaryReservationsPage() {
     const [actionToEdit, setActionToEdit] = useState<ReservationAction | null>(null);
     const [acceptedRequests, setAcceptedRequests] = useState<number[]>([]);
 
+    const secretaryId = "20073cd6-43b4-4dd5-aa1e-a65fd14ca71a"; // exemple statique, à adapter
+
     useEffect(() => {
-        // Récupère les réservations en attente (pending)
-        ReservationAction.fetchPending().then((pending) => {
+        const refreshReservations = async () => {
+            const pending = await ReservationAction.fetchPending(secretaryId);
             setReservationActions(pending);
-        });
-        // Récupère les réservations confirmées (hors pending)
-        ReservationAction.fetchAllConfirmed().then((confirmed) => {
+            const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
             setReservations(confirmed.map((r: any) => ({
                 id: r.id,
                 userId: r.userId,
@@ -99,24 +97,34 @@ export default function SecretaryReservationsPage() {
                 status: r.status,
                 checkedIn: r.checkedIn,
             })));
-        });
-    }, []);
+        };
+        refreshReservations();
+    }, [secretaryId]);
 
-    const handleCreateReservation = (newReservationData: Omit<Reservation, "id" | "userName" | "userDepartment" | "status" | "checkedIn">) => {
-        const user = mockUsers.find((u) => u.id === newReservationData.userId)
-        const newReservation: Reservation = {
-            id: Date.now(),
-            ...newReservationData,
-            userName: user?.name || "",
-            userDepartment: user?.department || "",
-            status: "upcoming",
-            checkedIn: false,
+    const handleCreateReservation = async (newReservationData: Omit<Reservation, "id" | "userName" | "userDepartment" | "status" | "checkedIn">) => {
+        try {
+            console.log("Creating reservation with data:", newReservationData);
+            await ReservationAction.create(newReservationData);
+            success("Votre réservation a bien été créée.");
+            setIsCreateDialogOpen(false);
+            // Rafraîchir les données
+            const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
+            setReservations(confirmed.map((r: any) => ({
+                id: r.id,
+                userId: r.userId,
+                userName: r.userName,
+                userDepartment: r.userDepartment,
+                date: r.date,
+                spot: r.spot,
+                time: r.time,
+                isElectric: r.isElectric,
+                status: r.status,
+                checkedIn: r.checkedIn,
+            })));
+        } catch (e) {
+            success("Erreur lors de la création de la réservation.");
         }
-        setReservations([...reservations, newReservation])
-        success("Your parking reservation has been successfully created. \n " +
-            `Parking spot ${newReservation.spot} has been reserved for ${newReservation.userName}.`)
-        setIsCreateDialogOpen(false)
-    }
+    };
 
     const handleEditReservation = (updatedReservationData: Omit<Reservation, "id" | "userName" | "userDepartment" | "status" | "checkedIn">) => {
         const user = mockUsers.find((u) => u.id === updatedReservationData.userId)
@@ -139,15 +147,53 @@ export default function SecretaryReservationsPage() {
         setReservationToEdit(null)
     }
 
-    const handleCancelReservation = (id: number) => {
-        setReservations(reservations.filter((res) => res.id !== id))
-        success("Your parking reservation has been successfully cancelled.");
-    }
+    const handleCancelReservation = async (id: number) => {
+        try {
+            if (ReservationAction.cancel) {
+                await ReservationAction.cancel(String(id));
+            }
+            success("Votre réservation a bien été annulée.");
+            // Rafraîchir les données
+            const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
+            setReservations(confirmed.map((r: any) => ({
+                id: r.id,
+                userId: r.userId,
+                userName: r.userName,
+                userDepartment: r.userDepartment,
+                date: r.date,
+                spot: r.spot,
+                time: r.time,
+                isElectric: r.isElectric,
+                status: r.status,
+                checkedIn: r.checkedIn,
+            })));
+        } catch (e) {
+            success("Erreur lors de l'annulation de la réservation.");
+        }
+    };
 
-    const handleCheckIn = (id: number) => {
-        setReservations(reservations.map((res) => (res.id === id ? {...res, checkedIn: true, status: "completed"} : res)))
-        success("Check-in successful.");
-    }
+    const handleCheckIn = async (id: number) => {
+        try {
+            await ReservationAction.checkIn(String(id));
+            success("Check-in effectué avec succès.");
+            // Rafraîchir les données
+            const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
+            setReservations(confirmed.map((r: any) => ({
+                id: r.id,
+                userId: r.userId,
+                userName: r.userName,
+                userDepartment: r.userDepartment,
+                date: r.date,
+                spot: r.spot,
+                time: r.time,
+                isElectric: r.isElectric,
+                status: r.status,
+                checkedIn: r.checkedIn,
+            })));
+        } catch (e) {
+            success("Erreur lors du check-in.");
+        }
+    };
 
     const handleAcceptAction = async (actionId: number) => {
         const action = reservationActions.find(a => a.id === actionId);
@@ -688,7 +734,7 @@ export default function SecretaryReservationsPage() {
                                              initialData={reservationToEdit}/>
                         )}
                         {actionToEdit && (
-                            <ActionEditForm action={actionToEdit} onSubmit={handleEditReservation}
+                            <Edit action={actionToEdit} onSubmit={handleEditReservation}
                                             onCancel={() => setIsEditDialogOpen(false)}/>
                         )}
                     </div>
