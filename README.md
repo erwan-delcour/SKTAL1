@@ -1,36 +1,31 @@
-# SKTAL1 - Backend
-Pour initialiser la base de données, exécuter la commande suivante depuis la racine du projet :
+# SKTAL1
+
+Pour lancer l'application, il faut faire la commande suivante à la racine du projet :
 
 ```bash
-docker build -t my-postgres-image .  
-```
-et ensuite : 
-
-```bash
-docker run --name my-postgres-container -p 5432:5432 -d my-postgres-image
+docker-compose up --build
 ```
 
-Après cela, depuis votre terminal, rendez vous dans le dossier `backend` et exécutez la commande suivante : 
-```bash
-npm install
+Ensuite, vous pouvez accéder à l'application pour le frontend via l'URL suivante :
+
 ```
-Puis, pour démarrer le serveur backend, exécutez la commande suivante :
-
-```bash
-npm run dev
+http://localhost:3000
 ```
+Et pour le backend via l'URL suivante :
 
-
-# SKTAL1 - Frontend
-
-Pour initialiser le front, rendez vous dans le dossier `frontend` et exécutez la commande suivante :
-
-```bash
-npm install
 ```
+http://localhost:3001
+``` 
 
-Puis, pour démarrer le serveur backend, exécutez la commande suivante :
 
-```bash
-npm run dev
-```
+Pour se connecter à l'application en tant qu'utilisateur, vous pouvez utiliser les identifiants suivants :
+- **Login**: `username`
+- **Mot de passe**: `test`
+
+Pour une secretaire, vous pouvez utiliser les identifiants suivants :
+- **Login**: `secretary`
+- **Mot de passe**: `secretary`
+
+Pour un administrateur, vous pouvez utiliser les identifiants suivants :
+- **Login**: `manager`
+- **Mot de passe**: `manager`
