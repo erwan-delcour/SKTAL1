@@ -90,6 +90,7 @@ create table reservations (
     needsCharger BOOLEAN NOT NULL,
     startDate DATE NOT NULL,
     endDate DATE NOT NULL,
+    statusReservation TEXT NOT NULL DEFAULT 'pending',
     statusChecked BOOLEAN NOT NULL DEFAULT FALSE,
     checkInTime TIMESTAMP WITH TIME ZONE,
     Foreign Key (userId) REFERENCES users(id),

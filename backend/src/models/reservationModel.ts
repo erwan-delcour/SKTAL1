@@ -140,7 +140,8 @@ export async function getReservationsByUserFromDB(userId: string): Promise<Reser
 
 export function cancelReservationInDB(reservationId: string): Promise<void> {
   const query = `
-        DELETE FROM reservations
+        UPDATE reservations
+        SET statusReservation = 'cancelled'
         WHERE id = $1
     `;
   return pool.query(query, [reservationId])
@@ -153,12 +154,28 @@ export function cancelReservationInDB(reservationId: string): Promise<void> {
     });
 }
 
+export function refuseReservationInDB(reservationId: string): Promise<void> {
+  const query = `
+        UPDATE reservations
+        SET statusReservation = 'refused'
+        WHERE id = $1
+    `;
+  return pool.query(query, [reservationId])
+    .then(() => {
+      console.log(`Reservation ${reservationId} refused`);
+    })
+    .catch(error => {
+      console.error('Error refusing reservation:', error);
+      throw new CustomError('Internal server error', 500);
+    });
+}
+
 export function createReservationInDB(reservation: Reservation): Promise<Reservation> {
   console.log('Creating reservation:', reservation);
 
   const query = `
-        INSERT INTO reservations (userId, spotId, needsCharger, startDate, endDate, checkInTime)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO reservations (userId, spotId, needsCharger, startDate, endDate)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id
     `;
   const values = [
@@ -167,7 +184,6 @@ export function createReservationInDB(reservation: Reservation): Promise<Reserva
     reservation.needsCharger,
     reservation.startDate,
     reservation.endDate,
-    reservation.checkInTime
   ];
 
   return pool.query(query, values)
