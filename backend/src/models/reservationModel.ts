@@ -159,24 +159,24 @@ export async function getReservationsByUserFromDB(userId: string): Promise<{ con
   return { confirmedReservations, pendingReservations };
 }
 
-export async function cancelPendingReservationInDB(reservationId: string): Promise<void> {
+export async function deleteReservationInDB(reservationId: string): Promise<void> {
   const query = `
-        DELETE FROM reservationsPending
+        DELETE FROM reservations
         WHERE id = $1
     `;
   return pool.query(query, [reservationId])
     .then(() => {
-      console.log(`Reservation ${reservationId} cancelled`);
+      console.log(`Reservation ${reservationId} deleted`);
     })
     .catch(error => {
-      console.error('Error cancelling reservation:', error);
+      console.error('Error deleting reservation:', error);
       throw new CustomError('Internal server error', 500);
     });
 }
 
 export async function refuseReservationInDB(reservationId: string): Promise<void> {
   const query = `
-        UPDATE reservations
+        UPDATE reservationsPending
         SET statusReservation = 'refused'
         WHERE id = $1
     `;

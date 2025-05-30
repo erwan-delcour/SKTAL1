@@ -1,4 +1,4 @@
-import { getReservationsFromDB, cancelPendingReservationInDB, findAvailableSpot, createReservationInDB, updateReservationInDB, getReservationByIdFromDB, getReservationsByUserFromDB, checkedInReservationInDB, getReservationIdFromTodayBySpotid, checkReservation, refuseReservationInDB, createPendingReservationInDB, getPendingReservationsFromDB, getPendingReservationByIdFromDB } from "../models/reservationModel";
+import { getReservationsFromDB, deleteReservationInDB, findAvailableSpot, createReservationInDB, updateReservationInDB, getReservationByIdFromDB, getReservationsByUserFromDB, checkedInReservationInDB, getReservationIdFromTodayBySpotid, checkReservation, refuseReservationInDB, createPendingReservationInDB, getPendingReservationsFromDB, getPendingReservationByIdFromDB } from "../models/reservationModel";
 import { getUserById } from "../models/userModel";
 import { Request, Response } from "express";
 
@@ -88,7 +88,7 @@ export const getReservationsByUser = async (req: Request, res: Response) => {
     }
 };
 
-export const cancelReservation = async (req: Request, res: Response) => {
+export const deleteReservation = async (req: Request, res: Response) => {
     const reservationId = req.params.id;
     try {
         const reservation = await getPendingReservationByIdFromDB(reservationId);
@@ -101,16 +101,17 @@ export const cancelReservation = async (req: Request, res: Response) => {
             res.status(400).json({ message: "Reservation ID is missing" });
             return;
         }
-        await cancelPendingReservationInDB(reservation.id);
+
+        await deleteReservationInDB(reservation.id);
 
         res.status(200).json(reservation);
     } catch (error) {
-        console.error("Error cancelling reservation:", error);
+        console.error("Error deleting reservation:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 };
 
-export const refuseReservation = async (req: Request, res: Response) => {
+export const refusePendingReservation = async (req: Request, res: Response) => {
     const reservationId = req.body.id;
     const userId = req.body.userId as string;
     if (!reservationId || !userId) {
