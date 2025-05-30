@@ -14,10 +14,10 @@ import {
 
 const router = Router();
 
-router.get("/:id", getReservations);
+router.post("/:id", getReservations);
 router.get("/:id", getReservationById);
 router.get("/user/:userId", getReservationsByUser);
-router.get("/pending/list", getPendingReservations);
+router.post("/pending/list", getPendingReservations);
 router.post("/checkin/:spotId", checkedInReservation);
 router.post("/create", createReservation);
 router.post("/request", requestReservation);

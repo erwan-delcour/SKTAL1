@@ -50,9 +50,24 @@ interface User {
 }
 
 const mockUsers: User[] = [
-    {id: "e1270421-4f89-4394-be0e-f8b44b14b6c8", name: "John Doe", email: "john.doe@company.com", department: "Engineering"},
-    {id: "4d03f851-a89b-44b8-b830-fdf3766a4386", name: "Alice Smith", email: "alice.smith@company.com", department: "Administration"},
-    {id: "20073cd6-43b4-4dd5-aa1e-a65fd14ca71a", name: "Bob Johnson", email: "bob.johnson@company.com", department: "Marketing"}
+    {
+        id: "e1270421-4f89-4394-be0e-f8b44b14b6c8",
+        name: "John Doe",
+        email: "john.doe@company.com",
+        department: "Engineering"
+    },
+    {
+        id: "4d03f851-a89b-44b8-b830-fdf3766a4386",
+        name: "Alice Smith",
+        email: "alice.smith@company.com",
+        department: "Administration"
+    },
+    {
+        id: "20073cd6-43b4-4dd5-aa1e-a65fd14ca71a",
+        name: "Bob Johnson",
+        email: "bob.johnson@company.com",
+        department: "Marketing"
+    }
 ]
 
 export default function SecretaryReservationsPage() {
@@ -195,26 +210,30 @@ export default function SecretaryReservationsPage() {
         }
     };
 
-    const handleAcceptAction = async (actionId: number) => {
+    const handleAcceptAction = async (actionId: string) => {
         const action = reservationActions.find(a => a.id === actionId);
-        if (!action) return;
-        // TODO: Remplacer ce spot par la vraie sélection de place (ici exemple statique)
-        const spot = {
-            id: '411e23cd-0c2e-448d-bffe-e5934b6e2a9d',
-            isAvailable: true,
-            hasCharger: true,
-            row: 'A',
-            spotNumber: '01'
-        };
-        // TODO: Remplacer par le vrai userId lié à la demande
-        const user = mockUsers[0];
-        await ReservationAction.acceptWithSpot(
-            action,
-            spot,
-            user.id,
-            (id) => setReservationActions(prev => prev.map(a => a.id === id ? { ...a, status: 'accepted' } : a)),
-            success
-        );
+        console.log("Accepting action:", actionId);
+
+
+        const success = await ReservationAction.acceptWithSpot(actionId)
+        console.log("success:", success);
+
+        if (success) {
+            // Rafraîchir la liste des réservations confirmées
+            const confirmed = await ReservationAction.fetchAllConfirmed(secretaryId);
+            setReservations(confirmed.map((r: any) => ({
+                id: r.id,
+                userId: r.userId,
+                userName: r.userName,
+                userDepartment: r.userDepartment,
+                date: r.date,
+                spot: r.spot,
+                time: r.time,
+                isElectric: r.isElectric,
+                status: r.status,
+                checkedIn: r.checkedIn,
+            })));
+        }
     };
 
     // Filtrer les demandes à valider : uniquement celles des employés
@@ -242,7 +261,7 @@ export default function SecretaryReservationsPage() {
                 description: undefined,
             })),
             ...reservationActions.map(a => ({
-                id: a.id + 10000,
+                id: a.id,
                 userName: '-',
                 userDepartment: '-',
                 spot: '-',
@@ -481,11 +500,13 @@ export default function SecretaryReservationsPage() {
                                                     className="text-xs text-muted-foreground">{reservation.userDepartment}</div>
                                             </div>
                                             <div className="flex items-center gap-1">
-                                                {reservation.spot}
+                                                {typeof reservation.spot === 'object' && reservation.spot !== null
+                                                    ? (reservation.spot.spotNumber || reservation.spot.id || '-')
+                                                    : (reservation.spot || '-')}
                                                 {reservation.isElectric && <Zap className="h-4 w-4 text-yellow-500"/>}
                                             </div>
                                             <div>{reservation.date}</div>
-                                            <div>{reservation.time.split ? reservation.time.split(" (")[0] : reservation.time}</div>
+                                            <div>{reservation.time && reservation.time.split ? reservation.time.split(" (", 1)[0] : reservation.time || ""}</div>
                                             <div>
                                                 <Badge
                                                     variant={
@@ -519,15 +540,17 @@ export default function SecretaryReservationsPage() {
                                                             <Button
                                                                 variant="default"
                                                                 size="sm"
-                                                                onClick={() => handleAcceptAction(reservation.id - 10000)}
-                                                            >Accept</Button>
+                                                                onClick={() => handleAcceptAction(String(reservation.id))}
+                                                            >
+                                                                Accept
+                                                            </Button>
                                                         )}
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
                                                             className="gap-1"
                                                             onClick={() => {
-                                                                const action = reservationActions.find(a => a.id === reservation.id - 10000);
+                                                                const action = reservationActions.find(a => a.id === reservation.id);
                                                                 if (action) {
                                                                     setActionToEdit(action);
                                                                     setIsEditDialogOpen(true);
@@ -541,7 +564,7 @@ export default function SecretaryReservationsPage() {
                                                             variant="destructive"
                                                             size="sm"
                                                             className="gap-1"
-                                                            onClick={() => handleCancelReservation(reservation.id - 10000)}
+                                                            onClick={() => handleCancelReservation(reservation.id)}
                                                         >
                                                             <Trash className="h-3 w-3"/>
                                                             Cancel
@@ -577,7 +600,8 @@ export default function SecretaryReservationsPage() {
                                                         </Button>
                                                         <Dialog>
                                                             <DialogTrigger asChild>
-                                                                <Button variant="destructive" size="sm" className="gap-1">
+                                                                <Button variant="destructive" size="sm"
+                                                                        className="gap-1">
                                                                     <Trash className="h-3 w-3"/>
                                                                     Cancel
                                                                 </Button>
@@ -586,7 +610,8 @@ export default function SecretaryReservationsPage() {
                                                                 <DialogHeader>
                                                                     <DialogTitle>Cancel Reservation</DialogTitle>
                                                                     <DialogDescription>
-                                                                        Are you sure you want to cancel this parking reservation
+                                                                        Are you sure you want to cancel this parking
+                                                                        reservation
                                                                         for {reservation.userName}?
                                                                         This action cannot be undone.
                                                                     </DialogDescription>
@@ -735,7 +760,7 @@ export default function SecretaryReservationsPage() {
                         )}
                         {actionToEdit && (
                             <Edit action={actionToEdit} onSubmit={handleEditReservation}
-                                            onCancel={() => setIsEditDialogOpen(false)}/>
+                                  onCancel={() => setIsEditDialogOpen(false)}/>
                         )}
                     </div>
                 </DialogContent>
@@ -745,7 +770,11 @@ export default function SecretaryReservationsPage() {
 }
 
 // Reservation Form Component (for create/edit)
-function ReservationForm({onSubmit, users, initialData = null}: {onSubmit: (data: any) => void, users: User[], initialData?: Partial<Reservation> | null}) {
+function ReservationForm({onSubmit, users, initialData = null}: {
+    onSubmit: (data: any) => void,
+    users: User[],
+    initialData?: Partial<Reservation> | null
+}) {
     const [userId, setUserId] = useState<string>(initialData?.userId || "")
     const [spot, setSpot] = useState<string>(initialData?.spot || "")
     const [date, setDate] = useState<Date | undefined>(initialData?.date ? new Date(initialData.date) : new Date())

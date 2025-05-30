@@ -1,6 +1,6 @@
 export class ReservationAction {
     constructor(
-        public id: number,
+        public id: string,
         public date: string,
         public time: string,
         public type: string,
@@ -10,43 +10,33 @@ export class ReservationAction {
     ) {
     }
 
-    // Action: Accepter la demande et créer la réservation via l'API
-    static async acceptWithSpot(
-        action: ReservationAction,
-        spot: { id: string; isAvailable: boolean; hasCharger: boolean; row: string; spotNumber: string },
-        userId: string,
-        removeAction: (id: number) => void,
-        notify: (msg: string) => void
-    ) {
+    static async acceptWithSpot(pendingReservationId: string) {
+        console.log("Accepting reservation with body:", pendingReservationId);
+        if (!pendingReservationId) {
+            return false;
+        }
+
         const body = {
-            userId: userId,
-            spot: {
-                id: spot.id,
-                isAvailable: spot.isAvailable,
-                hasCharger: spot.hasCharger,
-                row: spot.row,
-                spotNumber: spot.spotNumber
-            },
-            pendingReservationId: action.id,
-            needsCharger: spot.hasCharger,
-            startDate: action.date,
-            endDate: action.date
+            pendingReservationId: pendingReservationId,
         };
         try {
-            console.log("We are right here with body:", body);
+            console.log("Accepting reservation with body:", body);
             const res = await fetch('http://localhost:3001/api/reservations/create', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(body)
             });
             if (res.ok) {
-                removeAction(action.id);
-                notify('La réservation a été acceptée et créée.');
+                console.log("Reservation created successfully.");
+                return true;
             } else {
+                const errorData = await res.json().catch(() => null);
+                console.error("Error response:", errorData);
                 throw new Error('Erreur lors de la création de la réservation');
             }
         } catch (e) {
-            notify('Erreur lors de la création de la réservation.');
+            console.error("Error accepting reservation:", e);
+            return false;
         }
     }
 
@@ -56,12 +46,15 @@ export class ReservationAction {
      */
     static async fetchAllConfirmed(secretaryId: string): Promise<any[]> {
         try {
-            const res = await fetch(`http://localhost:3001/api/reservations`, {
+            console.log("Fetching all confirmed reservations for secretary:", secretaryId);
+            const res = await fetch(`http://localhost:3001/api/reservations/${secretaryId}`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ userId: secretaryId })
+                body: JSON.stringify({userId: secretaryId})
             });
-            if (!res.ok) throw new Error('Erreur lors de la récupération des réservations confirmées');
+            if (!res.ok) {
+                return [];
+            }
             return await res.json();
         } catch (e) {
             console.error("Erreur dans fetchAllConfirmed:", e);
@@ -79,15 +72,27 @@ export class ReservationAction {
             const res = await fetch(`http://localhost:3001/api/reservations/pending/list`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ userId: secretaryId })
+                body: JSON.stringify({userId: secretaryId})
             });
-            if (!res.ok) throw new Error('Erreur lors de la récupération des réservations en attente');
+            if (!res.ok){
+                return [];
+            }
             const data = await res.json();
             console.log("Received pending reservations:", data);
-            return data.map((item: any) => new ReservationAction(
+
+            // Vérification des IDs dans les données reçues
+            const validItems = data.filter((item: any) => {
+                if (!item.id) {
+                    console.warn("Réservation en attente sans ID détectée:", item);
+                    return false;
+                }
+                return true;
+            });
+
+            return validItems.map((item: any) => new ReservationAction(
                 item.id,
-                item.date || item.startDate, // Compatibilité avec différentes structures
-                item.time || "Full Day", // Valeur par défaut si non fourni
+                item.date || item.startDate,
+                item.time || "Full Day",
                 item.type || 'Employé',
                 item.vehicle || '',
                 item.description || '',
@@ -157,7 +162,7 @@ export class ReservationAction {
     static async cancel(id: string): Promise<boolean> {
         try {
             const res = await fetch(`http://localhost:3001/api/reservations/cancel/${id}`, {
-                method: 'POST',
+                method: 'DELETE',
                 headers: {'Content-Type': 'application/json'}
             });
             return res.ok;
@@ -172,7 +177,7 @@ export class ReservationAction {
             const res = await fetch('http://localhost:3001/api/reservations/refuse', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ id, userId })
+                body: JSON.stringify({id, userId})
             });
             return res.ok;
         } catch (e) {
