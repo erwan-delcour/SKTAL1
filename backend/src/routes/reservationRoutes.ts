@@ -7,8 +7,8 @@ import {
     checkedInReservation,
     requestReservation,
     getPendingReservations,
-    refuseReservation,
-    cancelReservation
+    refusePendingReservation,
+    deleteReservation
     
 } from "../controllers/reservationController";
 
@@ -21,6 +21,6 @@ router.get("/pending/list", getPendingReservations);
 router.post("/checkin/:spotId", checkedInReservation);
 router.post("/create", createReservation);
 router.post("/request", requestReservation);
-router.post("/refuse", refuseReservation);
-router.delete("/cancel", cancelReservation);
+router.post("/refuse", refusePendingReservation);
+router.delete("/cancel", deleteReservation);
 export default router;
