@@ -27,8 +27,28 @@ import {Badge} from "@/components/ui/badge";
 import {ParkingMapOverview} from "@/components/parking-map-overview";
 import {Toaster} from "@/components/ui/sonner";
 
+// Types
+interface Reservation {
+    id: number;
+    userId: string;
+    userName: string;
+    userDepartment: string;
+    date: string;
+    spot: string;
+    time: string;
+    isElectric: boolean;
+    status: "upcoming" | "active" | "completed" | "cancelled";
+    checkedIn: boolean;
+}
 
-const mockUsers = [
+interface User {
+    id: string;
+    name: string;
+    email: string;
+    department: string;
+}
+
+const mockUsers: User[] = [
     {id: "user1", name: "John Doe", email: "john.doe@company.com", department: "Engineering"},
     {id: "user2", name: "Alice Smith", email: "alice.smith@company.com", department: "Administration"},
     {id: "user3", name: "Bob Johnson", email: "bob.johnson@company.com", department: "Marketing"},
@@ -37,7 +57,7 @@ const mockUsers = [
 ]
 
 export default function SecretaryReservationsPage() {
-    const {success, error} = useToast()
+    const {success} = useToast()
     const [date, setDate] = useState<Date | undefined>(new Date())
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
@@ -48,7 +68,7 @@ export default function SecretaryReservationsPage() {
     const [isElectricFilter, setIsElectricFilter] = useState(false)
 
     // Mock data for reservations
-    const [reservations, setReservations] = useState([
+    const [reservations, setReservations] = useState<Reservation[]>([
         {
             id: 1,
             userId: "user1",
@@ -113,15 +133,15 @@ export default function SecretaryReservationsPage() {
 
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-    const [reservationToEdit, setReservationToEdit] = useState(null)
+    const [reservationToEdit, setReservationToEdit] = useState<Reservation | null>(null)
 
-    const handleCreateReservation = (newReservationData) => {
+    const handleCreateReservation = (newReservationData: Omit<Reservation, "id" | "userName" | "userDepartment" | "status" | "checkedIn">) => {
         const user = mockUsers.find((u) => u.id === newReservationData.userId)
-        const newReservation = {
+        const newReservation: Reservation = {
             id: Date.now(),
             ...newReservationData,
-            userName: user?.name,
-            userDepartment: user?.department,
+            userName: user?.name || "",
+            userDepartment: user?.department || "",
             status: "upcoming",
             checkedIn: false,
         }
@@ -131,23 +151,23 @@ export default function SecretaryReservationsPage() {
         setIsCreateDialogOpen(false)
     }
 
-    const handleEditReservation = (updatedReservationData) => {
+    const handleEditReservation = (updatedReservationData: Omit<Reservation, "id" | "userName" | "userDepartment" | "status" | "checkedIn">) => {
         const user = mockUsers.find((u) => u.id === updatedReservationData.userId)
         setReservations(
             reservations.map((res) =>
-                res.id === reservationToEdit.id
+                reservationToEdit && res.id === reservationToEdit.id
                     ? {
                         ...res,
                         ...updatedReservationData,
-                        userName: user?.name,
-                        userDepartment: user?.department,
+                        userName: user?.name || "",
+                        userDepartment: user?.department || "",
                     }
                     : res,
             ),
         )
 
         success("Your parking reservation has been successfully updated. \n " +
-            `Parking spot ${updatedReservationData.spot} has been reserved for ${updatedReservationData.userName}.`)
+            `Parking spot ${updatedReservationData.spot} has been reserved for ${updatedReservationData.userId}.`)
         setIsEditDialogOpen(false)
         setReservationToEdit(null)
     }
@@ -158,7 +178,7 @@ export default function SecretaryReservationsPage() {
     }
 
     const handleCheckIn = (id: number) => {
-        setReservations(reservations.map((res) => (res.id === id ? {...res, checkedIn: true, status: "active"} : res)))
+        setReservations(reservations.map((res) => (res.id === id ? {...res, checkedIn: true, status: "completed"} : res)))
         success("Check-in successful.");
     }
 
@@ -215,7 +235,7 @@ export default function SecretaryReservationsPage() {
                                                 <SelectItem value="all">All reservations</SelectItem>
                                                 <SelectItem value="active">Active today</SelectItem>
                                                 <SelectItem value="upcoming">Upcoming</SelectItem>
-                                                <SelectItem value="checked-in">Checked In</SelectItem>
+                                                <SelectItem value="completed">Checked In</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -248,7 +268,7 @@ export default function SecretaryReservationsPage() {
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="all">All users</SelectItem>
-                                                {mockUsers.map((user) => (
+                                                {mockUsers.map((user: User) => (
                                                     <SelectItem key={user.id} value={user.id}>
                                                         {user.name}
                                                     </SelectItem>
@@ -386,14 +406,14 @@ export default function SecretaryReservationsPage() {
                                                     variant={
                                                         reservation.status === "active"
                                                             ? "default"
-                                                            : reservation.checkedIn
-                                                                ? "secondary" // Consider a "success" variant
+                                                            : reservation.status === "completed"
+                                                                ? "secondary"
                                                                 : "outline"
                                                     }
                                                 >
                                                     {reservation.status === "active"
                                                         ? "Active"
-                                                        : reservation.checkedIn
+                                                        : reservation.status === "completed"
                                                             ? "Checked In"
                                                             : "Upcoming"}
                                                 </Badge>
@@ -559,7 +579,7 @@ export default function SecretaryReservationsPage() {
                                     (placeholder)</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <ParkingMapOverview reservations={reservations} users={mockUsers}/>
+                                <ParkingMapOverview reservations={reservations} users={mockUsers as User[]}/>
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -586,16 +606,22 @@ export default function SecretaryReservationsPage() {
 }
 
 // Reservation Form Component (for create/edit)
-function ReservationForm({onSubmit, users, initialData = null}) {
-    const [userId, setUserId] = useState(initialData?.userId || "")
-    const [spot, setSpot] = useState(initialData?.spot || "")
-    const [date, setDate] = useState<Date | undefined>(initialData ? new Date(initialData.date) : new Date())
-    const [time, setTime] = useState(initialData?.time?.split(" (")[0].toLowerCase().replace(" ", "-") || "full-day")
-    const [isElectric, setIsElectric] = useState(initialData?.isElectric || false)
+function ReservationForm({onSubmit, users, initialData = null}: {onSubmit: (data: any) => void, users: User[], initialData?: Partial<Reservation> | null}) {
+    const [userId, setUserId] = useState<string>(initialData?.userId || "")
+    const [spot, setSpot] = useState<string>(initialData?.spot || "")
+    const [date, setDate] = useState<Date | undefined>(initialData?.date ? new Date(initialData.date) : new Date())
+    const [time, setTime] = useState<"full-day" | "morning" | "afternoon">(
+        initialData?.time?.split(" (")[0].toLowerCase().replace(" ", "-") as "full-day" | "morning" | "afternoon" || "full-day"
+    )
 
-    const handleSubmit = (e) => {
+    const handleTimeChange = (value: string) => {
+        setTime(value as "full-day" | "morning" | "afternoon")
+    }
+    const [isElectric, setIsElectric] = useState<boolean>(initialData?.isElectric || false)
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        const timeSlotMap = {
+        const timeSlotMap: Record<"full-day" | "morning" | "afternoon", string> = {
             "full-day": "Full day (8:00 AM - 6:00 PM)",
             morning: "Morning (8:00 AM - 1:00 PM)",
             afternoon: "Afternoon (1:00 PM - 6:00 PM)",
@@ -603,7 +629,7 @@ function ReservationForm({onSubmit, users, initialData = null}) {
         onSubmit({
             userId,
             spot,
-            date: format(date, "MMM d, yyyy"),
+            date: date ? format(date, "MMM d, yyyy") : "",
             time: timeSlotMap[time],
             isElectric,
         })
@@ -618,7 +644,7 @@ function ReservationForm({onSubmit, users, initialData = null}) {
                         <SelectValue placeholder="Select user"/>
                     </SelectTrigger>
                     <SelectContent>
-                        {users.map((user) => (
+                        {users.map((user: User) => (
                             <SelectItem key={user.id} value={user.id}>
                                 {user.name} ({user.department})
                             </SelectItem>
@@ -659,7 +685,7 @@ function ReservationForm({onSubmit, users, initialData = null}) {
             </div>
             <div className="space-y-2">
                 <Label htmlFor="time">Time Slot</Label>
-                <Select value={time} onValueChange={setTime} required>
+                <Select value={time} onValueChange={handleTimeChange} required>
                     <SelectTrigger id="time">
                         <SelectValue placeholder="Select time slot"/>
                     </SelectTrigger>
