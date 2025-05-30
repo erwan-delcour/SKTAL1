@@ -5,6 +5,7 @@ import * as reservationRoutes from './routes/reservationRoutes';
 import * as statsRoutes from './routes/statsRoutes';
 import cors, { CorsOptions } from 'cors';
 import morgan = require('morgan');
+import * as userRoutes from "./routes/userRoutes";
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes.default);
 app.use('/api/reservations', reservationRoutes.default);
 app.use('/api/stats', statsRoutes.default);
+app.use('/api/user', userRoutes.default);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
