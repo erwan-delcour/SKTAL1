@@ -13,6 +13,7 @@ INSERT INTO users (email, login, password, role) VALUES
 ('manager@example.com', 'manager', '$2b$10$ZWn8ZgOsSO61ozb2UKb5g.EMQBRdmEedl2hByo6Ld6x7tyNaFhpK6', 'manager'),
 ('secretary@example.com', 'secretary', '$2b$10$DPFeMchkrRhrnd/PbXZFY.LK1wxsR9D0pF3RcDGG7Hai56JHSalAi', 'secretary');
 
+
 CREATE TABLE places (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     isAvailable BOOLEAN NOT NULL DEFAULT TRUE,
@@ -95,6 +96,17 @@ create table reservations (
     checkInTime TIMESTAMP WITH TIME ZONE,
     Foreign Key (userId) REFERENCES users(id),
     Foreign Key (spotId) REFERENCES places(id)
+);
+
+DROP TABLE reservationsPending;
+create table reservationsPending (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    userId UUID NOT NULL,
+    needsCharger BOOLEAN NOT NULL,
+    startDate DATE NOT NULL,
+    endDate DATE NOT NULL,
+    statusReservation TEXT NOT NULL DEFAULT 'pending',
+    Foreign Key (userId) REFERENCES users(id)
 );
 
 BEGIN;
