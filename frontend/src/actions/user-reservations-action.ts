@@ -75,7 +75,7 @@ export async function getUserReservations(): Promise<UserReservationsState> {
         success: false,
       };
     }    // Call backend API to retrieve reservations
-    const response = await fetch(`http://localhost:3001/api/reservations/user/${userId}`, {
+    const response = await fetch(`http://backend:3001/api/reservations/user/${userId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',

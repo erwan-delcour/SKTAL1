@@ -35,7 +35,7 @@ export async function getTodayStats(): Promise<StatsState> {
     }
 
     // Appel à l'API backend pour récupérer les statistiques
-    const response = await fetch(`http://localhost:3001/api/stats/today`, {
+    const response = await fetch(`http://backend:3001/api/stats/today`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',

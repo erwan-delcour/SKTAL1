@@ -40,7 +40,7 @@ export async function getSpotsStatus(): Promise<SpotsStatusState> {
     }
 
     // Call backend API to retrieve spots status
-    const response = await fetch(`http://localhost:3001/api/stats/spots/status`, {
+    const response = await fetch(`http://backend:3001/api/stats/spots/status`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',

@@ -30,7 +30,7 @@ export async function cancelUserReservation(reservationId: string): Promise<{
     }
 
     // Appel à l'API backend pour annuler la réservation
-    const response = await fetch(`http://localhost:3001/api/reservations/cancel/${reservationId}`, {
+    const response = await fetch(`http://backend:3001/api/reservations/cancel/${reservationId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,

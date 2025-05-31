@@ -77,7 +77,7 @@ export async function createParkingReservation(
     };
 
     // Appel unique à l'API backend
-    const response = await fetch("http://localhost:3001/api/reservations/request", {
+    const response = await fetch("http://backend:3001/api/reservations/request", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

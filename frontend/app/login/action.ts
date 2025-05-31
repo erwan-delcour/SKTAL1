@@ -18,7 +18,7 @@ export const signInAction = async (
     const password = formData.get("password") as string;
 
         if (login && password) {
-            const response = await fetch("http://localhost:3001/api/auth/signin", {
+            const response = await fetch("http://backend:3001/api/auth/signin", {
                 method: "POST",
                 body: JSON.stringify({ login, password }),
                 headers: {
