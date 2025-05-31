@@ -1,16 +1,16 @@
 'use client';
-import {DashboardShell} from "@/components/dashboard-shell";
-import {Button} from "@/components/ui/button";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select"
-import {useToast} from "@/hooks/useToast";
-import {cn} from "@/lib/utils";
-import {Popover, PopoverContent, PopoverTrigger} from "@radix-ui/react-popover";
-import {format} from "date-fns";
-import {CalendarIcon, Car, Check, Edit, Filter, List, Map, Plus, Search, Trash, Zap} from "lucide-react"
-import {useState, useEffect} from "react";
-import {Calendar} from "@/components/ui/calendar";
-import {Checkbox} from "@/components/ui/checkbox";
-import {Label} from "@/components/ui/label";
+import { DashboardShell } from "@/components/dashboard-shell";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useToast } from "@/hooks/useToast";
+import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover";
+import { format } from "date-fns";
+import { CalendarIcon, Car, Check, Edit, Filter, List, Map, Plus, Search, Trash, Zap } from "lucide-react"
+import { useState, useEffect } from "react";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
     Dialog,
     DialogContent,
@@ -20,14 +20,14 @@ import {
     DialogTitle,
     DialogTrigger
 } from "@/components/ui/dialog";
-import {Input} from "@/components/ui/input";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Badge} from "@/components/ui/badge";
-import {ParkingMapOverview} from "@/components/parking-map-overview";
-import {Toaster} from "@/components/ui/sonner";
-import {ReservationAction} from "./reservationAction";
-import {getUserIdFromCookie} from "@/actions/user-reservations-action";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ParkingMapOverview } from "@/components/parking-map-overview";
+import { Toaster } from "@/components/ui/sonner";
+import { ReservationAction } from "./reservationAction";
+import { getUserIdFromCookie } from "@/actions/user-reservations-action";
 
 // Types
 interface Reservation {
@@ -74,7 +74,7 @@ const mockUsers: User[] = [
 ]
 
 export default function SecretaryReservationsPage() {
-    const {success} = useToast()
+    const { success } = useToast()
     const [date, setDate] = useState<Date | undefined>(new Date())
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
@@ -125,7 +125,7 @@ export default function SecretaryReservationsPage() {
             })));
         };
         fetchAndRefreshReservations();
-    }, [secretaryId]);
+    }, []);
 
     const handleCreateReservation = async (newReservationData: Omit<Reservation, "id" | "userName" | "userDepartment" | "status" | "checkedIn">) => {
         try {
@@ -353,7 +353,7 @@ export default function SecretaryReservationsPage() {
                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                     <div className="flex flex-1 items-center gap-2">
                         <div className="relative flex-1">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/>
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="search"
                                 placeholder="Search by spot, user, date..."
@@ -365,7 +365,7 @@ export default function SecretaryReservationsPage() {
                         <Popover open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" className="gap-2">
-                                    <Filter className="h-4 w-4"/>
+                                    <Filter className="h-4 w-4" />
                                     Filters
                                 </Button>
                             </PopoverTrigger>
@@ -375,7 +375,7 @@ export default function SecretaryReservationsPage() {
                                         <h4 className="font-medium text-sm">Status</h4>
                                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select status"/>
+                                                <SelectValue placeholder="Select status" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="all">All reservations</SelectItem>
@@ -396,13 +396,13 @@ export default function SecretaryReservationsPage() {
                                                         !dateFilter && "text-muted-foreground",
                                                     )}
                                                 >
-                                                    <CalendarIcon className="mr-2 h-4 w-4"/>
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
                                                     {dateFilter ? format(dateFilter, "PPP") : "Pick a date"}
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0">
                                                 <Calendar mode="single" selected={dateFilter} onSelect={setDateFilter}
-                                                          initialFocus/>
+                                                    initialFocus />
                                             </PopoverContent>
                                         </Popover>
                                     </div>
@@ -410,7 +410,7 @@ export default function SecretaryReservationsPage() {
                                         <h4 className="font-medium text-sm">User</h4>
                                         <Select value={userFilter} onValueChange={setUserFilter}>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select user"/>
+                                                <SelectValue placeholder="Select user" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="all">All users</SelectItem>
@@ -426,7 +426,7 @@ export default function SecretaryReservationsPage() {
                                         <h4 className="font-medium text-sm">Department</h4>
                                         <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select department"/>
+                                                <SelectValue placeholder="Select department" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="all">All departments</SelectItem>
@@ -445,7 +445,7 @@ export default function SecretaryReservationsPage() {
                                             onCheckedChange={(checked) => setIsElectricFilter(checked === true)}
                                         />
                                         <Label htmlFor="electric-filter" className="flex items-center gap-1">
-                                            <Zap className="h-4 w-4 text-yellow-500"/>
+                                            <Zap className="h-4 w-4 text-yellow-500" />
                                             Electric Only
                                         </Label>
                                     </div>
@@ -474,7 +474,7 @@ export default function SecretaryReservationsPage() {
                     <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                         <DialogTrigger asChild>
                             <Button className="gap-2">
-                                <Plus className="h-4 w-4"/>
+                                <Plus className="h-4 w-4" />
                                 New Reservation
                             </Button>
                         </DialogTrigger>
@@ -485,7 +485,7 @@ export default function SecretaryReservationsPage() {
                                     reservation.</DialogDescription>
                             </DialogHeader>
                             <div className="py-4">
-                                <ReservationForm onSubmit={handleCreateReservation} users={mockUsers}/>
+                                <ReservationForm onSubmit={handleCreateReservation} users={mockUsers} />
                             </div>
                         </DialogContent>
                     </Dialog>
@@ -494,15 +494,15 @@ export default function SecretaryReservationsPage() {
                 <Tabs defaultValue="list" className="space-y-4">
                     <TabsList>
                         <TabsTrigger value="list" className="flex items-center gap-2">
-                            <List className="h-4 w-4"/>
+                            <List className="h-4 w-4" />
                             List View
                         </TabsTrigger>
                         <TabsTrigger value="calendar" className="flex items-center gap-2">
-                            <CalendarIcon className="h-4 w-4"/>
+                            <CalendarIcon className="h-4 w-4" />
                             Calendar View
                         </TabsTrigger>
                         <TabsTrigger value="map" className="flex items-center gap-2">
-                            <Map className="h-4 w-4"/>
+                            <Map className="h-4 w-4" />
                             Parking Map
                         </TabsTrigger>
                     </TabsList>
@@ -511,7 +511,7 @@ export default function SecretaryReservationsPage() {
                             <Card>
                                 <CardContent className="flex flex-col items-center justify-center py-10 text-center">
                                     <div className="rounded-full bg-muted p-3 mb-3">
-                                        <Car className="h-6 w-6 text-muted-foreground"/>
+                                        <Car className="h-6 w-6 text-muted-foreground" />
                                     </div>
                                     <h3 className="text-lg font-medium">No reservations found</h3>
                                     <p className="text-sm text-muted-foreground mt-1 max-w-md">
@@ -545,23 +545,23 @@ export default function SecretaryReservationsPage() {
                                                 {/* Affiche row et numéro de place si dispo */}
                                                 {reservation.spotRow || reservation.spot?.row || '-'}
                                                 {reservation.spotNumber || reservation.spot?.spotNumber ? ` ${reservation.spotNumber || reservation.spot?.spotNumber}` : ''}
-                                                {reservation.isElectric && <Zap className="h-4 w-4 text-yellow-500"/>}
+                                                {reservation.isElectric && <Zap className="h-4 w-4 text-yellow-500" />}
                                             </div>
                                             <div>{reservation.startDate ? reservation.startDate.split('T')[0] : '-'}</div>
                                             <div>{reservation.endDate ? reservation.endDate.split('T')[0] : '-'}</div>
                                             <div>
                                                 <Badge
-                                                variant={
-                                                    reservation.status === "active"
-                                                        ? "default"
-                                                        : reservation.status === "completed"
-                                                            ? "secondary"
-                                                            : reservation.status === "pending"
-                                                                ? "destructive"
-                                                                : reservation.status === "accepted"
-                                                                    ? "secondary"
-                                                                    : "outline"
-                                                }
+                                                    variant={
+                                                        reservation.status === "active"
+                                                            ? "default"
+                                                            : reservation.status === "completed"
+                                                                ? "secondary"
+                                                                : reservation.status === "pending"
+                                                                    ? "destructive"
+                                                                    : reservation.status === "accepted"
+                                                                        ? "secondary"
+                                                                        : "outline"
+                                                    }
                                                 >
                                                     {reservation.status === "active"
                                                         ? "Active"
@@ -599,7 +599,7 @@ export default function SecretaryReservationsPage() {
                                                                 }
                                                             }}
                                                         >
-                                                            <Edit className="h-3 w-3"/>
+                                                            <Edit className="h-3 w-3" />
                                                             Edit
                                                         </Button>
                                                         <Button
@@ -608,7 +608,7 @@ export default function SecretaryReservationsPage() {
                                                             className="gap-1"
                                                             onClick={() => handleCancelReservation(reservation.id)}
                                                         >
-                                                            <Trash className="h-3 w-3"/>
+                                                            <Trash className="h-3 w-3" />
                                                             Cancel
                                                         </Button>
                                                     </>
@@ -621,7 +621,7 @@ export default function SecretaryReservationsPage() {
                                                                 className="gap-1"
                                                                 onClick={() => handleCheckIn(reservation.id)}
                                                             >
-                                                                <Check className="h-3 w-3"/>
+                                                                <Check className="h-3 w-3" />
                                                                 Check In
                                                             </Button>
                                                         )}
@@ -637,14 +637,14 @@ export default function SecretaryReservationsPage() {
                                                                 }
                                                             }}
                                                         >
-                                                            <Edit className="h-3 w-3"/>
+                                                            <Edit className="h-3 w-3" />
                                                             Edit
                                                         </Button>
                                                         <Dialog>
                                                             <DialogTrigger asChild>
                                                                 <Button variant="destructive" size="sm"
-                                                                        className="gap-1">
-                                                                    <Trash className="h-3 w-3"/>
+                                                                    className="gap-1">
+                                                                    <Trash className="h-3 w-3" />
                                                                     Cancel
                                                                 </Button>
                                                             </DialogTrigger>
@@ -664,7 +664,7 @@ export default function SecretaryReservationsPage() {
                                                                         onClick={() => {
                                                                             document
                                                                                 .querySelector("[data-dialog-close]")
-                                                                                ?.dispatchEvent(new MouseEvent("click", {bubbles: true}))
+                                                                                ?.dispatchEvent(new MouseEvent("click", { bubbles: true }))
                                                                         }}
                                                                     >
                                                                         Keep Reservation
@@ -675,7 +675,7 @@ export default function SecretaryReservationsPage() {
                                                                             handleCancelReservation(reservation.id)
                                                                             document
                                                                                 .querySelector("[data-dialog-close]")
-                                                                                ?.dispatchEvent(new MouseEvent("click", {bubbles: true}))
+                                                                                ?.dispatchEvent(new MouseEvent("click", { bubbles: true }))
                                                                         }}
                                                                     >
                                                                         Yes, Cancel
@@ -748,7 +748,7 @@ export default function SecretaryReservationsPage() {
                                                                         <span
                                                                             className="text-sm text-muted-foreground">({reservation.userName})</span>
                                                                         {reservation.isElectric &&
-                                                                            <Zap className="h-4 w-4 text-yellow-500"/>}
+                                                                            <Zap className="h-4 w-4 text-yellow-500" />}
                                                                     </div>
                                                                     <p className="text-sm text-muted-foreground">{reservation.time}</p>
                                                                 </div>
@@ -785,7 +785,7 @@ export default function SecretaryReservationsPage() {
                     </TabsContent>
                 </Tabs>
             </div>
-            <Toaster/>
+            <Toaster />
 
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogContent className="sm:max-w-[600px]">
@@ -796,11 +796,11 @@ export default function SecretaryReservationsPage() {
                     <div className="py-4">
                         {reservationToEdit && (
                             <ReservationForm onSubmit={handleEditReservation} users={mockUsers}
-                                             initialData={reservationToEdit}/>
+                                initialData={reservationToEdit} />
                         )}
                         {actionToEdit && (
                             <Edit action={actionToEdit} onSubmit={handleEditReservation}
-                                  onCancel={() => setIsEditDialogOpen(false)}/>
+                                onCancel={() => setIsEditDialogOpen(false)} />
                         )}
                     </div>
                 </DialogContent>
@@ -810,7 +810,7 @@ export default function SecretaryReservationsPage() {
 }
 
 // Reservation Form Component (for create/edit)
-function ReservationForm({onSubmit, users, initialData = null}: {
+function ReservationForm({ onSubmit, users, initialData = null }: {
     onSubmit: (data: any) => void,
     users: User[],
     initialData?: Partial<Reservation> | null
@@ -849,7 +849,7 @@ function ReservationForm({onSubmit, users, initialData = null}: {
                 <Label htmlFor="user">User</Label>
                 <Select value={userId} onValueChange={setUserId} required>
                     <SelectTrigger id="user">
-                        <SelectValue placeholder="Select user"/>
+                        <SelectValue placeholder="Select user" />
                     </SelectTrigger>
                     <SelectContent>
                         {users.map((user: User) => (
@@ -881,12 +881,12 @@ function ReservationForm({onSubmit, users, initialData = null}: {
                                 variant="outline"
                                 className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
                             >
-                                <CalendarIcon className="mr-2 h-4 w-4"/>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
                                 {date ? format(date, "PPP") : "Pick a date"}
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                            <Calendar mode="single" selected={date} onSelect={setDate} initialFocus/>
+                            <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
                         </PopoverContent>
                     </Popover>
                 </div>
@@ -895,7 +895,7 @@ function ReservationForm({onSubmit, users, initialData = null}: {
                 <Label htmlFor="time">Time Slot</Label>
                 <Select value={time} onValueChange={handleTimeChange} required>
                     <SelectTrigger id="time">
-                        <SelectValue placeholder="Select time slot"/>
+                        <SelectValue placeholder="Select time slot" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="full-day">Full day</SelectItem>
@@ -911,7 +911,7 @@ function ReservationForm({onSubmit, users, initialData = null}: {
                     onCheckedChange={(checked) => setIsElectric(checked === true)}
                 />
                 <Label htmlFor="is-electric-form" className="flex items-center gap-1">
-                    <Zap className="h-4 w-4 text-yellow-500"/>
+                    <Zap className="h-4 w-4 text-yellow-500" />
                     Electric Charging Spot
                 </Label>
             </div>
