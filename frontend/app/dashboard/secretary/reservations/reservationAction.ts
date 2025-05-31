@@ -25,7 +25,7 @@ export class ReservationAction {
         };
         try {
             console.log("Accepting reservation with body:", body);
-            const res = await fetch('http://backend:3001/api/reservations/create', {
+            const res = await fetch('http://localhost:3001/api/reservations/create', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(body)
@@ -44,14 +44,10 @@ export class ReservationAction {
         }
     }
 
-    /**
-     * Récupérer toutes les réservations (hors pending) pour une secrétaire donnée
-     * @param secretaryId string - l'id de la secrétaire
-     */
     static async fetchAllConfirmed(secretaryId: string): Promise<any[]> {
         try {
             console.log("Fetching all confirmed reservations for secretary:", secretaryId);
-            const res = await fetch(`http://backend:3001/api/reservations/${secretaryId}`, {
+            const res = await fetch(`http://localhost:3001/api/reservations/${secretaryId}`, {
                 method: 'GET',
                 headers: {'Content-Type': 'application/json'}
             });
@@ -65,18 +61,16 @@ export class ReservationAction {
         }
     }
 
-    /**
-     * Récupérer les réservations en attente (pending) pour une secrétaire
-     * @param secretaryId string - l'id de la secrétaire
-     */
+    
     static async fetchPending(secretaryId: string): Promise<ReservationAction[]> {
         try {
             console.log("Fetching pending reservations for secretary:", secretaryId);
-            const res = await fetch(`http://backend:3001/api/reservations/pending/list`, {
+            const res = await fetch(`http://localhost:3001/api/reservations/pending/list`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({userId: secretaryId})
             });
+            console.log("Response status:", res.status);
             if (!res.ok){
                 return [];
             }
@@ -154,7 +148,7 @@ export class ReservationAction {
     // Récupérer les réservations d'un utilisateur
     static async fetchByUser(userId: string): Promise<any[]> {
         try {
-            const res = await fetch(`http://backend:3001/api/reservations/user/${userId}`, {
+            const res = await fetch(`http://localhost:3001/api/reservations/user/${userId}`, {
                 method: 'GET',
                 headers: {'Content-Type': 'application/json'}
             });
@@ -168,7 +162,7 @@ export class ReservationAction {
     // Annuler une réservation
     static async cancel(id: string): Promise<boolean> {
         try {
-            const res = await fetch(`http://backend:3001/api/reservations/cancel/${id}`, {
+            const res = await fetch(`http://localhost:3001/api/reservations/cancel/${id}`, {
                 method: 'DELETE',
                 headers: {'Content-Type': 'application/json'}
             });
@@ -181,7 +175,7 @@ export class ReservationAction {
     // Refuser une réservation
     static async refuse(id: string, userId: string): Promise<boolean> {
         try {
-            const res = await fetch('http://backend:3001/api/reservations/refuse', {
+            const res = await fetch('http://localhost:3001/api/reservations/refuse', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({id, userId})
@@ -195,7 +189,7 @@ export class ReservationAction {
     // Modifier une réservation
     static async update(id: string, updatedData: any): Promise<any> {
         try {
-            const res = await fetch(`http://backend:3001/api/reservations/${id}`, {
+            const res = await fetch(`http://localhost:3001/api/reservations/${id}`, {
                 method: 'PATCH',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(updatedData)
